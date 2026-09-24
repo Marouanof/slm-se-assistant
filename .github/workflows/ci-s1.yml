@@ -1,0 +1,26 @@
+# CI S1 — preuve de reproductibilité (lint + tests, benchmark court en CI).
+# Le benchmark complet 20 tâches reste local : python evals/run.py --limit 20
+name: ci-s1
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  s1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Ruff
+        run: ruff check backend evals
+      - name: Backend tests
+        run: python -m pytest backend/tests -q
+      - name: Evals smoke (2 tâches)
+        run: python -m pytest evals/tests/test_runner.py -q
