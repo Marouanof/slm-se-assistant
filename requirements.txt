@@ -1,0 +1,7 @@
+# Backend MVP S1 — versions épinglées Python 3.11
+fastapi==0.115.0
+uvicorn==0.32.0
+pydantic==2.9.2
+pytest==8.3.3
+ruff==0.7.0
+bandit==1.8.0
