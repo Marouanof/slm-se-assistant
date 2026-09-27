@@ -1,4 +1,4 @@
-"""Schémas Pydantic S1 — contrats stables pour agents S2 et UI S3."""
+"""Schémas Pydantic S1/S2 — contrats stables pour agents S2 et UI S3."""
 
 from typing import Any, Optional
 
@@ -39,6 +39,36 @@ class AnalyzeResponse(BaseModel):
     ruff: list[RuffIssue] = []
     bandit: list[BanditIssue] = []
     latency_ms: int = 0
+
+
+class TestsResponse(BaseModel):
+    run_id: str
+    files: list[str] = []
+    tests_pass: bool = False
+    coverage_pct: Optional[float] = None
+    tests_output: str = ""
+    trajectoire: list[str] = []
+    latency_ms: int = 0
+    model: str = "template-s2"
+    prompt_version: str = "v1"
+    status: str = "needs_review"
+
+
+class ReviewResponse(BaseModel):
+    run_id: str
+    files: list[str] = []
+    ruff: list[RuffIssue] = []
+    bandit: list[BanditIssue] = []
+    tests_pass: bool = False
+    coverage_pct: Optional[float] = None
+    tests_output: str = ""
+    findings: list[str] = []
+    patch_proposal: str = ""
+    trajectoire: list[str] = []
+    latency_ms: int = 0
+    model: str = "template-s2"
+    prompt_version: str = "v1"
+    status: str = "needs_review"
 
 
 class HealthResponse(BaseModel):

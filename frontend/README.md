@@ -1,8 +1,18 @@
-# Frontend — stub S1 (UI prévue S3)
+# Frontend — S3 (Vite React TS)
 
-Dossier vide en S1 (cf. `.gitkeep`). L'interface React + TypeScript arrive en
-Semaine 3 : sélection du dépôt, lancement, résultats des 3 agents, tests,
-correctifs, métriques et journal d'audit.
+UI pipeline : sélection path/code, lancement `/review`, résultats agents, patch suggéré,
+métriques (latence, couverture, tokens), audit `/runs`. Contenu analysé affiché en texte
+seul (`<pre>`), bandeau non fiable, décision humaine requise.
 
-En attendant, le backend se teste via `/health`, `/analyze`, `/runs/{id}`
-(voir `../README.md` et `../docs/ARCHITECTURE.md`).
+## Dev
+
+```powershell
+cd frontend
+npm ci
+npm run lint
+npm run dev      # http://localhost:5173 (proxy /api → http://localhost:8000)
+npm run build
+```
+
+Prod : `VITE_API_URL=http://localhost:8000 npm run build`.
+Docker (préparé, compose final S6) : voir `Dockerfile`.

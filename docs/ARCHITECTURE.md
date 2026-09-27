@@ -58,9 +58,27 @@ sequenceDiagram
 - Entraînement QLoRA (Unsloth, fallback transformers+PEFT) : Colab/Kaggle T4 gratuit — seul l'adaptateur + métadonnées sont rapatriés.
 - Inférence : GGUF-INT4 CPU via Ollama/llama.cpp (Qwen 0.5B d'abord, 1.5B max si trop faible).
 
+## État S2 (réel, déterministe)
+
+- Graphe : `backend/agents/graph.py` (`build_graph`, `run_pipeline`) — `analyse→tests→revue→humain`, `model=template-s2`, `prompt=v1`.
+- Outils allow-list : `backend/agents/tools.py` (`read_file`, `search_symbols`, `run_ruff`, `run_bandit`, `run_pytest`), `shell=False`, `timeout 30s`, tmp sandbox, `redact()` secrets.
+- Endpoints : `/tests` (Agent2) + `/review` (complet) branchés, `/analyze` inchangé, audit `trajectoire` dans `runs/runs.json`.
+- Tests : `backend/tests/test_agents.py` (allow-list, algo OK, B102 bloquant) + `test_api.py` (S2 200, 422 traversée, audit sans secret).
+- S4 : brancher LLM via adaptateur sans changer le graphe (prompts `backend/agents/prompts/v1/`).
+
+## État S3 (réel — gel features après S3)
+
+- UI : `frontend/` Vite React TS (`App.tsx`, `api.ts` proxy `/api`→8000, `types.ts` miroir schemas),
+  CORS backend `localhost:5173` seul, rendu `<pre>` + bandeau non fiable.
+- MCP : `mcp_server/server.py` stdio stdlib (`list_files`, `read_file`, `search_symbols`), `../` refusé, sans SDK.
+- Sécu : `docs/SECURITY.md`, 5 scénarios `backend/tests/test_security.py` verts, `redact()` étendu (`ghp_`, `Bearer`).
+- Docker préparé : `backend/Dockerfile`, `frontend/Dockerfile` (compose S6).
+- CI : job `frontend` (`npm ci`, `tsc`, `build`) + backend `ruff/bandit -ll/pytest`.
+
 ## Fichiers de référence
 
 - Périmètre et planning : `../PLAN_PROJET.txt`
-- Backend S1 : `../backend/main.py`, `../backend/schemas.py`, `../backend/tests/test_api.py`
-- Benchmark : `../evals/DATASET.md`, `../evals/hashes.txt`, `../evals/run.py`
+- Backend S3 : `../backend/main.py`, `../backend/schemas.py`, `../backend/tests/`, `../backend/agents/`, `../mcp_server/`
+- Frontend S3 : `../frontend/src/App.tsx`, `../frontend/src/api.ts`
+- Benchmark : `../evals/DATASET.md`, `../evals/hashes.txt`, `../evals/run.py` (20/20 conservé)
 - Rapport final : `../README.md` (à compléter S6)

@@ -1,9 +1,6 @@
-"""Backend FastAPI S1 — stubs déterministes + analyse Ruff/Bandit allow-listée."""
+"""Backend FastAPI S1/S2/S3 — analyse Ruff/Bandit via tools allow-listés."""
 
 import json
-import re
-import subprocess
-import sys
 import tempfile
 import time
 import uuid
@@ -11,37 +8,42 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
+from backend.agents import tools as agent_tools
+from backend.agents.graph import MODEL_ID as _MODEL_ID
+from backend.agents.graph import PROMPT_VERSION as _PROMPT_VERSION
+from backend.agents.graph import run_pipeline
 from backend.schemas import (
     AnalyzeRequest,
     AnalyzeResponse,
     BanditIssue,
     HealthResponse,
+    ReviewResponse,
     RuffIssue,
     RunRecord,
+    TestsResponse,
 )
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = agent_tools.PROJECT_ROOT
 RUNS_DIR = PROJECT_ROOT / "runs"
 RUNS_FILE = RUNS_DIR / "runs.json"
-TOOL_TIMEOUT_S = 30
+TOOL_TIMEOUT_S = agent_tools.TOOL_TIMEOUT_S
 
-app = FastAPI(title="slm-se-assistant S1", version="0.1.0-s1")
+app = FastAPI(title="slm-se-assistant S3", version="0.3.0-s3")
 
-# Secrets à ne jamais logger ni renvoyer tels quels.
-_SECRET_RES = [
-    re.compile(r"sk-[A-Za-z0-9\-_]{8,}"),
-    re.compile(r"AKIA[0-9A-Z]{16}"),
-    re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
-    re.compile(r"(?i)(password|passwd|pwd|api[_-]?key|secret)\s*[:=]\s*\S+"),
-]
+# CORS S3 : UI Vite locale uniquement, jamais de wildcard.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+    allow_credentials=False,
+)
 
 
 def redact(text: str) -> str:
-    out = text or ""
-    for rx in _SECRET_RES:
-        out = rx.sub("***REDACTED***", out)
-    return out
+    return agent_tools.redact(text)
 
 
 def _load_runs() -> dict:
@@ -61,81 +63,40 @@ def _save_run(record: RunRecord) -> None:
 
 
 def _resolve_project_path(raw: str) -> Path:
-    if ".." in raw.replace("\\", "/").split("/"):
-        raise HTTPException(status_code=422, detail="Traversée de chemin interdite ('..').")
-    candidate = (PROJECT_ROOT / raw).resolve()
-    try:
-        candidate.relative_to(PROJECT_ROOT.resolve())
-    except ValueError:
-        raise HTTPException(status_code=422, detail="Chemin hors projet refusé.") from None
-    if not candidate.exists() or not candidate.is_file():
-        raise HTTPException(status_code=404, detail=f"Fichier introuvable: {raw}")
-    return candidate
+    # Délègue à l'allow-list S2 (même erreurs 422/404).
+    return agent_tools.resolve_project_path(raw)
 
 
 def _run_ruff(target: Path) -> list[RuffIssue]:
-    try:
-        proc = subprocess.run(
-            [sys.executable, "-m", "ruff", "check", str(target), "--output-format", "json"],
-            capture_output=True,
-            text=True,
-            timeout=TOOL_TIMEOUT_S,
-            shell=False,
-            cwd=str(PROJECT_ROOT),
-        )
-        if not proc.stdout.strip():
-            return []
-        raw = json.loads(proc.stdout)
-        issues: list[RuffIssue] = []
-        for item in raw if isinstance(raw, list) else []:
-            loc = item.get("location") or {}
-            issues.append(
-                RuffIssue(
-                    code=str(item.get("code", "")),
-                    message=redact(str(item.get("message", ""))),
-                    filename=str(item.get("filename", "")),
-                    row=loc.get("row"),
-                    col=loc.get("column"),
-                )
+    # Compat S1 (evals/run.py) : convertit les dicts tools → modèles Pydantic.
+    out: list[RuffIssue] = []
+    for item in agent_tools._run_ruff(target):
+        out.append(
+            RuffIssue(
+                code=str(item.get("code", "")),
+                message=str(item.get("message", "")),
+                filename=str(item.get("filename", "")),
+                row=item.get("row"),
+                col=item.get("col"),
             )
-        return issues
-    except subprocess.TimeoutExpired:
-        return [RuffIssue(code="RUFF_TIMEOUT", message="Ruff timeout 30s")]
-    except Exception as exc:  # noqa: BLE001 - stub S1 robuste
-        return [RuffIssue(code="RUFF_ERROR", message=redact(str(exc)))]
+        )
+    return out
 
 
 def _run_bandit(target: Path) -> list[BanditIssue]:
-    try:
-        proc = subprocess.run(
-            [sys.executable, "-m", "bandit", "-f", "json", "-q", str(target)],
-            capture_output=True,
-            text=True,
-            timeout=TOOL_TIMEOUT_S,
-            shell=False,
-            cwd=str(PROJECT_ROOT),
-        )
-        if not proc.stdout.strip():
-            return []
-        raw = json.loads(proc.stdout)
-        results = raw.get("results", []) if isinstance(raw, dict) else []
-        issues: list[BanditIssue] = []
-        for item in results:
-            issues.append(
-                BanditIssue(
-                    test_id=str(item.get("test_id", "")),
-                    severity=str(item.get("issue_severity", "")),
-                    confidence=str(item.get("issue_confidence", "")),
-                    text=redact(str(item.get("issue_text", ""))),
-                    filename=str(item.get("filename", "")),
-                    line_number=item.get("line_number"),
-                )
+    out: list[BanditIssue] = []
+    for item in agent_tools._run_bandit(target):
+        out.append(
+            BanditIssue(
+                test_id=str(item.get("test_id", "")),
+                severity=str(item.get("severity", "")),
+                confidence=str(item.get("confidence", "")),
+                text=str(item.get("text", "")),
+                filename=str(item.get("filename", "")),
+                line_number=item.get("line_number"),
             )
-        return issues
-    except subprocess.TimeoutExpired:
-        return [BanditIssue(test_id="BANDIT_TIMEOUT", text="Bandit timeout 30s")]
-    except Exception as exc:  # noqa: BLE001
-        return [BanditIssue(test_id="BANDIT_ERROR", text=redact(str(exc)))]
+        )
+    return out
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -183,14 +144,121 @@ def analyze(req: AnalyzeRequest) -> AnalyzeResponse:
     )
 
 
-@app.post("/tests", status_code=501)
-def tests_stub() -> dict:
-    return {"detail": "S2 - Test Generation non implémenté (stub S1)."}
+@app.post("/tests", response_model=TestsResponse)
+def run_tests(req: AnalyzeRequest) -> TestsResponse:
+    started = time.perf_counter()
+    run_id = uuid.uuid4().hex[:12]
+    # run_pipeline lève 422/404 si path invalide (traversée).
+    result = run_pipeline(code=req.code, path=req.path)
+    latency_ms = int((time.perf_counter() - started) * 1000)
+    files = result.get("files", [])
+    if req.code is not None:
+        req_summary = {"mode": "code", "code_len": len(req.code), "preview": redact(req.code[:200])}
+    else:
+        req_summary = {"mode": "path", "path": redact(req.path or "")}
+    record = RunRecord(
+        id=run_id,
+        endpoint="/tests",
+        status=str(result.get("status", "needs_review")),
+        latency_ms=latency_ms,
+        created_at=datetime.now(timezone.utc).isoformat(),
+        request_summary=req_summary,
+        result_summary={
+            "files": files,
+            "tests_pass": result.get("tests_pass"),
+            "coverage_pct": result.get("coverage_pct"),
+            "trajectoire": result.get("trajectoire", []),
+            "model": result.get("model", _MODEL_ID),
+            "prompt_version": result.get("prompt_version", _PROMPT_VERSION),
+            "tokens_in": result.get("tokens_in", 0),
+            "tokens_out": result.get("tokens_out", 0),
+        },
+    )
+    _save_run(record)
+    return TestsResponse(
+        run_id=run_id,
+        files=files,
+        tests_pass=bool(result.get("tests_pass")),
+        coverage_pct=result.get("coverage_pct"),
+        tests_output=str(result.get("tests_output", ""))[:2000],
+        trajectoire=result.get("trajectoire", []),
+        latency_ms=latency_ms,
+        model=result.get("model", _MODEL_ID),
+        prompt_version=result.get("prompt_version", _PROMPT_VERSION),
+        status=str(result.get("status", "needs_review")),
+    )
 
 
-@app.post("/review", status_code=501)
-def review_stub() -> dict:
-    return {"detail": "S2 - Code Review non implémenté (stub S1)."}
+@app.post("/review", response_model=ReviewResponse)
+def run_review(req: AnalyzeRequest) -> ReviewResponse:
+    started = time.perf_counter()
+    run_id = uuid.uuid4().hex[:12]
+    result = run_pipeline(code=req.code, path=req.path)
+    latency_ms = int((time.perf_counter() - started) * 1000)
+    files = result.get("files", [])
+    ruff_issues = [
+        RuffIssue(
+            code=str(i.get("code", "")),
+            message=str(i.get("message", "")),
+            filename=str(i.get("filename", "")),
+            row=i.get("row"),
+            col=i.get("col"),
+        )
+        for i in result.get("ruff", [])
+    ]
+    bandit_issues = [
+        BanditIssue(
+            test_id=str(i.get("test_id", "")),
+            severity=str(i.get("severity", "")),
+            confidence=str(i.get("confidence", "")),
+            text=str(i.get("text", "")),
+            filename=str(i.get("filename", "")),
+            line_number=i.get("line_number"),
+        )
+        for i in result.get("bandit", [])
+    ]
+    if req.code is not None:
+        req_summary = {"mode": "code", "code_len": len(req.code), "preview": redact(req.code[:200])}
+    else:
+        req_summary = {"mode": "path", "path": redact(req.path or "")}
+    record = RunRecord(
+        id=run_id,
+        endpoint="/review",
+        status=str(result.get("status", "needs_review")),
+        latency_ms=latency_ms,
+        created_at=datetime.now(timezone.utc).isoformat(),
+        request_summary=req_summary,
+        result_summary={
+            "files": files,
+            "ruff_count": len(ruff_issues),
+            "bandit_count": len(bandit_issues),
+            "tests_pass": result.get("tests_pass"),
+            "coverage_pct": result.get("coverage_pct"),
+            "findings": result.get("findings", []),
+            "trajectoire": result.get("trajectoire", []),
+            "model": result.get("model", _MODEL_ID),
+            "prompt_version": result.get("prompt_version", _PROMPT_VERSION),
+            "tokens_in": result.get("tokens_in", 0),
+            "tokens_out": result.get("tokens_out", 0),
+        },
+    )
+    _save_run(record)
+    return ReviewResponse(
+        run_id=run_id,
+        files=files,
+        ruff=ruff_issues,
+        bandit=bandit_issues,
+        tests_pass=bool(result.get("tests_pass")),
+        coverage_pct=result.get("coverage_pct"),
+        tests_output=str(result.get("tests_output", ""))[:2000],
+        findings=result.get("findings", []),
+        patch_proposal=str(result.get("patch_proposal", "")),
+        trajectoire=result.get("trajectoire", []),
+        latency_ms=latency_ms,
+        model=result.get("model", _MODEL_ID),
+        prompt_version=result.get("prompt_version", _PROMPT_VERSION),
+        status=str(result.get("status", "needs_review")),
+    )
 
 
 @app.get("/runs/{run_id}", response_model=RunRecord)

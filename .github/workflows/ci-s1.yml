@@ -1,4 +1,4 @@
-# CI S1 — preuve de reproductibilité (lint + tests, benchmark court en CI).
+# CI S1/S2/S3 — lint + tests + sécu, benchmark court en CI.
 # Le benchmark complet 20 tâches reste local : python evals/run.py --limit 20
 name: ci-s1
 
@@ -19,8 +19,26 @@ jobs:
       - name: Install deps
         run: pip install -r requirements.txt
       - name: Ruff
-        run: ruff check backend evals
-      - name: Backend tests
+        run: ruff check backend evals mcp_server
+      - name: Bandit (sécu allow-list, seuil medium+)
+        run: python -m bandit -q -r backend mcp_server -x backend/tests -ll
+      - name: Backend tests (S2 pipeline + S3 sécu)
         run: python -m pytest backend/tests -q
       - name: Evals smoke (2 tâches)
         run: python -m pytest evals/tests/test_runner.py -q
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install frontend
+        run: npm ci
+        working-directory: frontend
+      - name: Typecheck
+        run: npm run lint
+        working-directory: frontend
+      - name: Build
+        run: npm run build
+        working-directory: frontend

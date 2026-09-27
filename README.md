@@ -19,26 +19,33 @@ MVP solo, coût 0€.
 - MCP -> lecture seule, dossier autorisé
 - LLMOps minimal -> versionning prompts/datasets + runs SQLite/JSON
 
-## Installation (S1)
+## Installation (S3)
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-uvicorn backend.main:app --reload
+.\.venv\Scripts\python.exe -m uvicorn backend.main:app --reload --port 8000
+# UI
+cd frontend
+npm ci
+npm run dev     # http://localhost:5173
+# MCP lecture seule (stdio)
+.\.venv\Scripts\python.exe -m mcp_server.server
 ```
 
-## Endpoints (S1)
+## Endpoints (S2)
 
-| Méthode + route | Statut S1 | Description |
+| Méthode + route | Statut S2 | Description |
 |---|---|---|
 | `GET /health` | 200 | Sonde `{status: ok}` |
 | `POST /analyze` | 200 | Analyse Ruff + Bandit (`code` ou `path` relatif, `../` → 422), log en `runs/` |
-| `POST /tests` | 501 | Stub — génération de tests (S2) |
-| `POST /review` | 501 | Stub — revue + correctif (S2) |
-| `GET /runs/{id}` | 200/404 | Audit LLMOps : endpoint, latence, résumé requête/résultat (secrets filtrés) |
+| `POST /tests` | 200 | Agent2 : smoke pytest + couverture en tmp, `trajectoire=[analyse,tests,revue,humain]` |
+| `POST /review` | 200 | Pipeline complet : Ruff+Bandit+tests+findings+patch (diff suggéré, `needs_review`) |
+| `GET /runs/{id}` | 200/404 | Audit LLMOps : endpoint, latence, trajectoire, modèle `template-s2`, prompt `v1` (secrets filtrés) |
 | `GET /runs` | 200 | Liste des runs (limite 50) |
 
-Détails : `docs/ARCHITECTURE.md`, tests `backend/tests/test_api.py`.
+Détails : `docs/ARCHITECTURE.md`, tests `backend/tests/test_api.py`, `backend/tests/test_agents.py`.
+Pipeline : `backend/agents/graph.py` (`run_pipeline`), outils allow-list `backend/agents/tools.py`, prompts `backend/agents/prompts/v1/`.
 
 ## Benchmark (S1)
 
@@ -53,12 +60,23 @@ Détails : `docs/ARCHITECTURE.md`, tests `backend/tests/test_api.py`.
 ```
 - `evals/results.json` est régénérable en local (non commité) ; CI : smoke `--limit 2` via `.github/workflows/ci-s1.yml`.
 
-## Limites connues (fin S1)
+## S3 — UI + MCP + sécurité (gel features majeures après S3)
 
-- Pas de LLM : `/analyze` = Ruff + Bandit déterministes, `/tests` et `/review` = 501.
-- Pas d'UI (`frontend/` = stub, S3), pas de QLoRA (`training/` = stub, S4).
-- Ollama / llama.cpp différés S4 (inférence GGUF-INT4 locale) ; entraînement QLoRA sur Colab/Kaggle.
-- `runs/` ignoré par Git (audit local uniquement).
+- UI Vite React TS : `frontend/src/App.tsx` (sélection path/code, `/review`, findings, patch, métriques, audit),
+  proxy `/api`→8000, CORS backend limité à `localhost:5173`, contenu rendu en texte seul.
+- MCP stdio sans SDK : `python -m mcp_server.server` (`list_files`, `read_file`, `search_symbols`),
+  `../`/absolus refusés, secrets filtrés, aucune écriture.
+- Sécurité : 5 scénarios verts `backend/tests/test_security.py`, détails `docs/SECURITY.md`.
+- Docker préparé sans bloquer : `backend/Dockerfile`, `frontend/Dockerfile` (compose final S6).
+- Démo : backend 8000 + `npm run dev` 5173 → `/review evals/tasks/task_20_hardcoded_password/solution.py` → `B105` + `needs_review`.
+
+## Limites connues (fin S3)
+
+- Pas de LLM : pipeline `template-s2` déterministe, LLM Qwen/Phi branchés en S4.
+- Pas de QLoRA (`training/` = stub, S4), pas d'ablations 700 générations (S5).
+- `runs/` + `frontend/dist/` + `node_modules/` ignorés par Git (audit/build locaux).
+- Benchmark conservé : **20/20 pass** (`evals/run.py --limit 20`), CI backend + frontend vertes.
+- Gel : toute nouvelle feature majeure → S6/baclog uniquement.
 
 ## Échéance
 01/01/2027. Fin visée MVP : 11/2026.

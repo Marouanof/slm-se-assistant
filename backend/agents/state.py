@@ -1,0 +1,27 @@
+"""État partagé du graphe S2 — déterministe, extensible pour LLM S4."""
+
+from typing import Any, TypedDict
+
+
+class AgentState(TypedDict, total=False):
+    """État circulant entre Analyse → Tests → Revue → Humain."""
+
+    input_code: str | None
+    input_path: str | None
+    files: list[str]
+    code_len: int
+    ruff: list[dict[str, Any]]
+    bandit: list[dict[str, Any]]
+    symbols: dict[str, Any]
+    tests_pass: bool | None
+    coverage_pct: float | None
+    tests_output: str
+    findings: list[str]
+    patch_proposal: str
+    trajectoire: list[str]
+    latency_ms: int
+    tokens_in: int
+    tokens_out: int
+    model: str
+    prompt_version: str
+    status: str
