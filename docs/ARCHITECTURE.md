@@ -78,6 +78,15 @@ sequenceDiagram
 - Docker préparé : `backend/Dockerfile`, `frontend/Dockerfile` (compose S6).
 - CI : job `frontend` (`npm ci`, `tsc`, `build`) + backend `ruff/bandit -ll/pytest`.
 
+## État S4-light (réel — SLM opt-in, graphe inchangé)
+
+- Appel : `tools.run_ollama()` via httpx (dépendance déjà épinglée, pas de SDK) vers `SLM_HOST`
+  (`localhost:11434`), timeout 120s dédié, `temperature: 0`, `redact()` avant/après.
+- Périmètre : `node_revue` seule (`llm_explanation` FR + `slm_tokens_in/out`, `slm_tokens_per_sec`, `slm_ttft_ms`
+  loggés dans `runs.json`) ; actif si `SLM_MODEL` défini (ex. `qwen2.5-coder:0.5b`), sinon fallback `template-s2`.
+- Mesuré Ryzen 3 (task_20) : ~22 tok/s, TTFT ~2.5s ; qualité 0.5B de base perfectible (motive QLoRA + prompt v2).
+- Tests : `backend/tests/test_s4_light.py` (désactivé par défaut, mock succès, mock panne → fallback).
+
 ## Fichiers de référence
 
 - Périmètre et planning : `../PLAN_PROJET.txt`

@@ -5,6 +5,7 @@ Aucun shell libre : seuls subprocess avec argv fixe, shell=False, cwd contrôlé
 
 import ast
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -12,10 +13,53 @@ import sys
 import tempfile
 from pathlib import Path
 
+import httpx
 from fastapi import HTTPException
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 TOOL_TIMEOUT_S = 30
+SLM_TIMEOUT_S = 120
+SLM_HOST = os.environ.get("SLM_HOST", "http://localhost:11434").rstrip("/")
+
+
+def slm_model() -> str:
+    """Nom du SLM actif (env SLM_MODEL), "" si désactivé (défaut déterministe)."""
+    name = os.environ.get("SLM_MODEL", "").strip()
+    return "" if name in ("", "template-s2") else name
+
+
+def run_ollama(prompt: str, model: str = "", timeout_s: int = SLM_TIMEOUT_S) -> dict:
+    """Appelle Ollama via httpx (dépendance déjà épinglée, pas de SDK Ollama).
+
+    Champs API lus : response, prompt_eval_count, eval_count, eval_duration,
+    prompt_eval_duration (proxy TTFT), load_duration. Jamais d'exception bloquante.
+    """
+    model = model or slm_model()
+    if not model:
+        return {"ok": False, "error": "SLM désactivé (SLM_MODEL non défini)"}
+    try:
+        resp = httpx.post(
+            SLM_HOST + "/api/generate",
+            json={"model": model, "prompt": prompt, "stream": False,
+                  "options": {"temperature": 0}},
+            timeout=timeout_s,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as exc:  # noqa: BLE001 - panne Ollama = fallback, jamais de crash
+        return {"ok": False, "error": redact(str(exc))[:200]}
+    eval_count = int(data.get("eval_count") or 0)
+    eval_dur = int(data.get("eval_duration") or 0)
+    tps = round(eval_count / eval_dur * 1e9, 1) if eval_dur > 0 else 0.0
+    return {
+        "ok": True,
+        "response": redact(str(data.get("response", "")))[:2000],
+        "prompt_tokens": int(data.get("prompt_eval_count") or 0),
+        "tokens_out": eval_count,
+        "tokens_per_sec": tps,
+        "ttft_ms": int(int(data.get("prompt_eval_duration") or 0) // 1_000_000),
+        "load_ms": int(int(data.get("load_duration") or 0) // 1_000_000),
+    }
 
 ALLOWED_TOOLS = ["read_file", "search_symbols", "run_ruff", "run_bandit", "run_pytest"]
 

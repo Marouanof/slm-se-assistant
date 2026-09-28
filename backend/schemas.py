@@ -68,6 +68,9 @@ class ReviewResponse(BaseModel):
     documentation: str = ""
     devops_verdict: str = "needs_review"
     devops_notes: str = ""
+    llm_explanation: str = ""
+    slm_tokens_per_sec: float = 0.0
+    slm_ttft_ms: int = 0
     trajectoire: list[str] = []
     latency_ms: int = 0
     model: str = "template-s2"

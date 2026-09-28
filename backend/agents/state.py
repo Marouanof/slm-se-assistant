@@ -22,6 +22,11 @@ class AgentState(TypedDict, total=False):
     documentation: str
     devops_verdict: str
     devops_notes: str
+    llm_explanation: str
+    slm_tokens_in: int
+    slm_tokens_out: int
+    slm_tokens_per_sec: float
+    slm_ttft_ms: int
     trajectoire: list[str]
     latency_ms: int
     tokens_in: int
