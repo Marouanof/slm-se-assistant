@@ -6,16 +6,18 @@ MVP solo, coût 0€.
 ## Périmètre
 - Backend FastAPI : `/health`, `/analyze`, `/tests`, `/review`, `/runs/{id}`
 - Frontend React + TypeScript
-- 3 agents LangGraph : Analyse → Tests → Revue → Décision humaine
+- 6 agents LangGraph : Analyse → Tests → Debug → Revue → Documentation → DevOps → Décision humaine
 - Serveur MCP lecture seule
 - QLoRA Qwen2.5-Coder-0.5B-Instruct (INT4) vs Phi-3-mini-4k-instruct
 - CI GitHub Actions + sécurité + audit
 
 ## Traçabilité CDC (scope réduit solo)
 - Code Analysis -> Agent 1 Analyse (Ruff + Bandit)
-- Test Generation + Debugging -> Agent 2 Tests (pytest + couverture)
-- Code Review -> Agent 3 Revue + correctif
-- Documentation + DevOps -> CI + README + endpoints
+- Test Generation -> Agent 2 Tests (pytest + couverture)
+- Debugging -> Agent 3 Debug (cause + correctif suggéré)
+- Code Review -> Agent 4 Revue (findings + verdict)
+- Documentation -> Agent 5 Documentation (doc générée depuis AST)
+- DevOps -> Agent 6 DevOps (quality-gates go/no-go) + CI + README + endpoints
 - MCP -> lecture seule, dossier autorisé
 - LLMOps minimal -> versionning prompts/datasets + runs SQLite/JSON
 
@@ -39,8 +41,8 @@ npm run dev     # http://localhost:5173
 |---|---|---|
 | `GET /health` | 200 | Sonde `{status: ok}` |
 | `POST /analyze` | 200 | Analyse Ruff + Bandit (`code` ou `path` relatif, `../` → 422), log en `runs/` |
-| `POST /tests` | 200 | Agent2 : smoke pytest + couverture en tmp, `trajectoire=[analyse,tests,revue,humain]` |
-| `POST /review` | 200 | Pipeline complet : Ruff+Bandit+tests+findings+patch (diff suggéré, `needs_review`) |
+| `POST /tests` | 200 | Agent2 : smoke pytest + couverture en tmp, `trajectoire=[analyse,tests,debug,revue,documentation,devops,humain]` |
+| `POST /review` | 200 | Pipeline complet 6 agents : Ruff+Bandit+tests+debug+doc+verdict DevOps (diff suggéré, `needs_review`) |
 | `GET /runs/{id}` | 200/404 | Audit LLMOps : endpoint, latence, trajectoire, modèle `template-s2`, prompt `v1` (secrets filtrés) |
 | `GET /runs` | 200 | Liste des runs (limite 50) |
 

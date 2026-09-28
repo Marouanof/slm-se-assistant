@@ -64,6 +64,10 @@ class ReviewResponse(BaseModel):
     tests_output: str = ""
     findings: list[str] = []
     patch_proposal: str = ""
+    debug_cause: str = ""
+    documentation: str = ""
+    devops_verdict: str = "needs_review"
+    devops_notes: str = ""
     trajectoire: list[str] = []
     latency_ms: int = 0
     model: str = "template-s2"

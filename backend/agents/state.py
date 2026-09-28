@@ -4,7 +4,7 @@ from typing import Any, TypedDict
 
 
 class AgentState(TypedDict, total=False):
-    """État circulant entre Analyse → Tests → Revue → Humain."""
+    """État circulant entre Analyse → Tests → Debug → Revue → Documentation → DevOps → Humain."""
 
     input_code: str | None
     input_path: str | None
@@ -18,6 +18,10 @@ class AgentState(TypedDict, total=False):
     tests_output: str
     findings: list[str]
     patch_proposal: str
+    debug_cause: str
+    documentation: str
+    devops_verdict: str
+    devops_notes: str
     trajectoire: list[str]
     latency_ms: int
     tokens_in: int

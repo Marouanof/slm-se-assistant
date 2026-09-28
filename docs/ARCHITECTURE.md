@@ -5,10 +5,13 @@
 ```mermaid
 flowchart LR
   UI[React + TS<br/>S3] --> API[FastAPI<br/>/health /analyze /tests /review /runs]
-  API --> G[LangGraph S2<br/>Analyse -> Tests -> Revue -> Humain]
+  API -->   G[LangGraph S4<br/>Analyse -> Tests -> Debug -> Revue -> Doc -> DevOps -> Humain]
   G --> T1[Agent1 Ruff+Bandit]
   G --> T2[Agent2 pytest+couverture]
-  G --> T3[Agent3 revue+correctif]
+  G --> T3[Agent3 debug cause+correctif]
+  G --> T4[Agent4 revue+verdict]
+  G --> T5[Agent5 documentation]
+  G --> T6[Agent6 DevOps go/no-go]
   API --> MCP[MCP lecture seule<br/>dossier autorisé]
   API --> DB[(runs.json<br/>audit LLMOps)]
   LLM1[Qwen2.5-0.5B QLoRA INT4<br/>Ollama CPU] --> G
@@ -60,7 +63,7 @@ sequenceDiagram
 
 ## État S2 (réel, déterministe)
 
-- Graphe : `backend/agents/graph.py` (`build_graph`, `run_pipeline`) — `analyse→tests→revue→humain`, `model=template-s2`, `prompt=v1`.
+- Graphe : `backend/agents/graph.py` (`build_graph`, `run_pipeline`) — `analyse→tests→debug→revue→documentation→devops→humain`, `model=template-s2`, `prompt=v1`.
 - Outils allow-list : `backend/agents/tools.py` (`read_file`, `search_symbols`, `run_ruff`, `run_bandit`, `run_pytest`), `shell=False`, `timeout 30s`, tmp sandbox, `redact()` secrets.
 - Endpoints : `/tests` (Agent2) + `/review` (complet) branchés, `/analyze` inchangé, audit `trajectoire` dans `runs/runs.json`.
 - Tests : `backend/tests/test_agents.py` (allow-list, algo OK, B102 bloquant) + `test_api.py` (S2 200, 422 traversée, audit sans secret).

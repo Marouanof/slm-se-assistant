@@ -1,4 +1,4 @@
-"""Graphe LangGraph S2 — noeuds déterministes (sans LLM)."""
+"""Graphe LangGraph S2/S4 — 6 agents déterministes (sans LLM)."""
 
 import tempfile
 import time
@@ -101,15 +101,48 @@ def node_tests(state: AgentState) -> dict:
                 "tests_pass": False, "tests_output": tools.redact(str(exc))[:500]}
 
 
-def node_revue(state: AgentState) -> dict:
-    findings: list[str] = []
+def node_debug(state: AgentState) -> dict:
+    """Agent 3 — Debugging : cause probable + correctif suggéré (jamais appliqué)."""
+    cause = ""
     patches: list[str] = []
+    if state.get("tests_pass") is False:
+        tail = tools.redact(str(state.get("tests_output", "")))[-500:]
+        cause = f"Échec smoke pytest — {tail}"
+        patches.append("- Corriger l'erreur smoke avant revue (import/compile).")
+    else:
+        for b in state.get("bandit", []):
+            tid = str(b.get("test_id", ""))
+            hint = _BANDIT_HINTS.get(tid)
+            if hint:
+                cause = f"[{tid}] {hint[0]}"
+                patches.append(f"- {tid}: {hint[1]}")
+                break
+        if not cause:
+            for r in state.get("ruff", []):
+                code = str(r.get("code", ""))
+                if code.startswith("E9") or code in ("F821", "F822"):
+                    cause = f"[{code}] {r.get('message', '')}"
+                    patches.append(f"- {code}: corriger l'erreur avant revue.")
+                    break
+    if not cause:
+        cause = "Aucun défaut détecté (Ruff+Bandit+smoke verts)."
+    patch_proposal = "\n".join(patches) if patches else "Aucun correctif requis."
+    return {
+        "debug_cause": cause,
+        "patch_proposal": patch_proposal,
+        "trajectoire": _traj(state, "debug"),
+        "status": "ok",
+    }
+
+
+def node_revue(state: AgentState) -> dict:
+    """Agent 4 — Revue : verdict à partir des agents précédents (ne répare plus)."""
+    findings: list[str] = []
     for b in state.get("bandit", []):
         tid = str(b.get("test_id", ""))
         hint = _BANDIT_HINTS.get(tid)
         if hint:
             findings.append(f"[bloquant:{tid}] {hint[0]}")
-            patches.append(f"- {tid}: {hint[1]}")
         elif tid and tid not in ("BANDIT_ERROR", "BANDIT_TIMEOUT"):
             findings.append(f"[bandit:{tid}] {b.get('text', '')}")
     for r in state.get("ruff", []):
@@ -120,14 +153,61 @@ def node_revue(state: AgentState) -> dict:
             findings.append(f"[ruff:{code}] {r.get('message', '')}")
     if state.get("tests_pass") is False:
         findings.append("[tests] smoke pytest échoué — voir tests_output")
-        patches.append("- Corriger l'erreur smoke avant revue (import/compile).")
     if not findings:
         findings.append("[ok] aucun défaut bloquant détecté (Ruff+Bandit+smoke verts)")
-    patch_proposal = "\n".join(patches) if patches else "Aucun correctif requis."
     return {
         "findings": findings,
-        "patch_proposal": patch_proposal,
         "trajectoire": _traj(state, "revue"),
+        "status": "ok",
+    }
+
+
+def node_documentation(state: AgentState) -> dict:
+    """Agent 5 — Documentation : doc générée depuis les symboles AST (texte seul)."""
+    symbols = state.get("symbols", {}) or {}
+    funcs = [str(f) for f in (symbols.get("functions", []) or [])]
+    classes = [str(c) for c in (symbols.get("classes", []) or [])]
+    imports = [str(i) for i in (symbols.get("imports", []) or []) if i]
+    files = [str(f) for f in (state.get("files", []) or [])]
+    lines = ["# Documentation générée (v1, déterministe)", ""]
+    if files:
+        lines.append(f"Fichiers : {', '.join(files)}")
+        lines.append("")
+    if funcs:
+        lines.append("## Fonctions")
+        lines.extend(f"- `{tools.redact(f)}()`" for f in funcs)
+        lines.append("")
+    if classes:
+        lines.append("## Classes")
+        lines.extend(f"- `{tools.redact(c)}`" for c in classes)
+        lines.append("")
+    if imports:
+        lines.append("## Imports")
+        lines.extend(f"- `{tools.redact(i)}`" for i in imports)
+        lines.append("")
+    if not (funcs or classes):
+        lines.append("Aucun symbole détecté.")
+    return {
+        "documentation": "\n".join(lines),
+        "trajectoire": _traj(state, "documentation"),
+        "status": "ok",
+    }
+
+
+def node_devops(state: AgentState) -> dict:
+    """Agent 6 — DevOps : verdict go/no-go compilé (CI-friendly, ne recalcule rien)."""
+    findings = [str(f) for f in (state.get("findings", []) or [])]
+    bloquants = [f for f in findings if "[bloquant:" in f]
+    tests_fail = state.get("tests_pass") is False
+    verdict = "NO-GO" if (bloquants or tests_fail) else "GO"
+    ruff_n = len(state.get("ruff", []) or [])
+    bandit_n = len(state.get("bandit", []) or [])
+    notes = (f"ruff={ruff_n} bandit={bandit_n} "
+             f"tests={'fail' if tests_fail else 'pass'} bloquants={len(bloquants)}")
+    return {
+        "devops_verdict": verdict,
+        "devops_notes": notes,
+        "trajectoire": _traj(state, "devops"),
         "status": "ok",
     }
 
@@ -142,16 +222,22 @@ def node_humain(state: AgentState) -> dict:
 
 
 def build_graph():  # type: ignore[no-untyped-def]
-    """Construit le graphe Analyse → Tests → Revue → Humain."""
+    """Construit le graphe Analyse → Tests → Debug → Revue → Documentation → DevOps → Humain."""
     g = StateGraph(AgentState)
     g.add_node("analyse", node_analyse)
     g.add_node("tests", node_tests)
+    g.add_node("debug", node_debug)
     g.add_node("revue", node_revue)
+    g.add_node("documentation", node_documentation)
+    g.add_node("devops", node_devops)
     g.add_node("humain", node_humain)
     g.set_entry_point("analyse")
     g.add_edge("analyse", "tests")
-    g.add_edge("tests", "revue")
-    g.add_edge("revue", "humain")
+    g.add_edge("tests", "debug")
+    g.add_edge("debug", "revue")
+    g.add_edge("revue", "documentation")
+    g.add_edge("documentation", "devops")
+    g.add_edge("devops", "humain")
     g.add_edge("humain", END)
     return g.compile()
 

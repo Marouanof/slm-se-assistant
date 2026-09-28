@@ -35,7 +35,7 @@ def test_tests_pipeline_smoke():
     body = r.json()
     assert body["run_id"]
     assert body["tests_pass"] is True
-    assert body["trajectoire"] == ["analyse", "tests", "revue", "humain"]
+    assert body["trajectoire"] == ["analyse", "tests", "debug", "revue", "documentation", "devops", "humain"]
     assert body["model"] == "template-s2"
     assert body["prompt_version"] == "v1"
 
@@ -49,12 +49,12 @@ def test_review_detecte_mot_de_passe():
     r = client.post("/review", json={"path": "evals/tasks/task_20_hardcoded_password/solution.py"})
     assert r.status_code == 200
     body = r.json()
-    assert body["trajectoire"] == ["analyse", "tests", "revue", "humain"]
+    assert body["trajectoire"] == ["analyse", "tests", "debug", "revue", "documentation", "devops", "humain"]
     assert any("B105" in f for f in body["findings"]), f"B105 attendu, got {body['findings']}"
     assert body["status"] == "needs_review"
     g = client.get(f"/runs/{body['run_id']}")
     assert g.status_code == 200
-    assert g.json()["result_summary"]["trajectoire"] == ["analyse", "tests", "revue", "humain"]
+    assert g.json()["result_summary"]["trajectoire"] == ["analyse", "tests", "debug", "revue", "documentation", "devops", "humain"]
 
 
 def test_review_sans_secret_dans_audit():

@@ -16,7 +16,7 @@ def test_1_prompt_injection_traitee_comme_texte():
     r = client.post("/review", json={"code": code})
     assert r.status_code == 200
     body = r.json()
-    assert body["trajectoire"] == ["analyse", "tests", "revue", "humain"]
+    assert body["trajectoire"] == ["analyse", "tests", "debug", "revue", "documentation", "devops", "humain"]
     assert body["status"] == "needs_review"
     # Aucune exécution d'instruction : le code reste un finding/texte, pas d'action.
     assert "delete" not in body["patch_proposal"].lower() or "needs_review" in body["status"]
