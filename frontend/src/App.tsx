@@ -124,20 +124,45 @@ export default function App() {
             </pre>
           </section>
 
-          <section style={{ border: "1px solid #ccc", padding: 12, marginTop: 12 }}>
-            <h2>3. Correctif suggéré + sortie tests</h2>
-            <pre style={{ whiteSpace: "pre-wrap", background: "#eef6ee", padding: 8 }}>
-              {result.patch_proposal}
+      <section style={{ border: "1px solid #ccc", padding: 12, marginTop: 12 }}>
+        <h2>3. Correctif suggéré + sortie tests</h2>
+        <pre style={{ whiteSpace: "pre-wrap", background: "#eef6ee", padding: 8 }}>
+          {result.patch_proposal}
+        </pre>
+        <pre style={{ whiteSpace: "pre-wrap", background: "#f6f6f6", padding: 8 }}>
+          {result.tests_output.slice(0, 2000)}
+        </pre>
+      </section>
+
+      <section style={{ border: "1px solid #ccc", padding: 12, marginTop: 12 }}>
+        <h2>4. Debug + Documentation + Verdict DevOps</h2>
+        <p>
+          <strong>Cause :</strong> {result.debug_cause || "(aucune)"} · <strong>Verdict :</strong>{" "}
+          {result.devops_verdict} <em>({result.devops_notes})</em>
+        </p>
+        <h3>Documentation générée</h3>
+        <pre style={{ whiteSpace: "pre-wrap", background: "#f6f6f6", padding: 8 }}>
+          {result.documentation || "(aucune)"}
+        </pre>
+        {result.llm_explanation && (
+          <>
+            <h3>Explication SLM ({result.model})</h3>
+            <pre style={{ whiteSpace: "pre-wrap", background: "#eef0ff", padding: 8 }}>
+              {result.llm_explanation}
             </pre>
-            <pre style={{ whiteSpace: "pre-wrap", background: "#f6f6f6", padding: 8 }}>
-              {result.tests_output.slice(0, 2000)}
-            </pre>
-          </section>
+            <p>
+              <em>
+                {result.slm_tokens_per_sec} tok/s · TTFT {result.slm_ttft_ms}ms
+              </em>
+            </p>
+          </>
+        )}
+      </section>
         </>
       )}
 
       <section style={{ border: "1px solid #ccc", padding: 12, marginTop: 12 }}>
-        <h2>4. Journal d&apos;audit (/runs)</h2>
+        <h2>5. Journal d&apos;audit (/runs)</h2>
         <button onClick={() => void refresh()}>Rafraîchir</button>
         <ul>
           {runs.slice(0, 10).map((r) => (

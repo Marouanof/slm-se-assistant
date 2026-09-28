@@ -27,6 +27,13 @@ export interface ReviewResponse {
   tests_output: string;
   findings: string[];
   patch_proposal: string;
+  debug_cause: string;
+  documentation: string;
+  devops_verdict: string;
+  devops_notes: string;
+  llm_explanation: string;
+  slm_tokens_per_sec: number;
+  slm_ttft_ms: number;
   trajectoire: string[];
   latency_ms: number;
   model: string;
