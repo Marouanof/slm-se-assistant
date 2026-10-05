@@ -23,20 +23,30 @@ SLM_HOST = os.environ.get("SLM_HOST", "http://localhost:11434").rstrip("/")
 
 
 def slm_model() -> str:
-    """Nom du SLM actif (env SLM_MODEL), "" si désactivé (défaut déterministe)."""
+    """Nom du SLM actif (env SLM_MODEL). S4-strict : obligatoire, aucun fallback template.
+
+    Lève HTTPException 503 si SLM_MODEL est vide — le pipeline refuse de répondre
+    en mode dégradé pour ne pas fausser les métriques CDC (§4) ni l'audit LLMOps.
+    """
     name = os.environ.get("SLM_MODEL", "").strip()
-    return "" if name in ("", "template-s2") else name
+    if name == "" or name == "template-s2":
+        raise HTTPException(
+            status_code=503,
+            detail="SLM_MODEL requis (ex. qwen2.5-coder:3b) — aucun fallback template (S4-strict).",
+        )
+    return name
 
 
 def run_ollama(prompt: str, model: str = "", timeout_s: int = SLM_TIMEOUT_S) -> dict:
     """Appelle Ollama via httpx (dépendance déjà épinglée, pas de SDK Ollama).
 
+    S4-strict : fail-fast 503, jamais de fallback silencieux. Toute panne Ollama
+    est explicite pour garder les métriques CDC et l'audit véridiques.
+
     Champs API lus : response, prompt_eval_count, eval_count, eval_duration,
-    prompt_eval_duration (proxy TTFT), load_duration. Jamais d'exception bloquante.
+    prompt_eval_duration (proxy TTFT), load_duration.
     """
-    model = model or slm_model()
-    if not model:
-        return {"ok": False, "error": "SLM désactivé (SLM_MODEL non défini)"}
+    model = model or slm_model()  # lève 503 si SLM_MODEL manquant
     try:
         resp = httpx.post(
             SLM_HOST + "/api/generate",
@@ -46,8 +56,13 @@ def run_ollama(prompt: str, model: str = "", timeout_s: int = SLM_TIMEOUT_S) -> 
         )
         resp.raise_for_status()
         data = resp.json()
-    except Exception as exc:  # noqa: BLE001 - panne Ollama = fallback, jamais de crash
-        return {"ok": False, "error": redact(str(exc))[:200]}
+    except HTTPException:
+        raise
+    except Exception as exc:  # noqa: BLE001 - panne Ollama = 503 explicite, jamais de fallback
+        raise HTTPException(
+            status_code=503,
+            detail=f"Ollama indisponible ({redact(str(exc))[:150]}) — vérifiez `ollama serve`.",
+        ) from exc
     eval_count = int(data.get("eval_count") or 0)
     eval_dur = int(data.get("eval_duration") or 0)
     tps = round(eval_count / eval_dur * 1e9, 1) if eval_dur > 0 else 0.0

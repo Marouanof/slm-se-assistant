@@ -36,7 +36,7 @@ def test_tests_pipeline_smoke():
     assert body["run_id"]
     assert body["tests_pass"] is True
     assert body["trajectoire"] == ["analyse", "tests", "debug", "revue", "documentation", "devops", "humain"]
-    assert body["model"] == "template-s2"
+    assert body["model"] == "mock-ci"  # S4-strict : mock explicite conftest, jamais template-s2
     assert body["prompt_version"] == "v1"
 
 

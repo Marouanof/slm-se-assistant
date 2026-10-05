@@ -1,4 +1,4 @@
-"""Tests S2 — graphe LangGraph déterministe."""
+"""Tests S4-strict — graphe LangGraph avec mock SLM explicite (conftest)."""
 
 from backend.agents.graph import run_pipeline
 from backend.agents.tools import ALLOWED_TOOLS, search_symbols
@@ -12,7 +12,7 @@ def test_pipeline_algo_ok():
     r = run_pipeline(path="evals/tasks/task_01_factorial/solution.py")
     assert r["trajectoire"] == ["analyse", "tests", "debug", "revue", "documentation", "devops", "humain"]
     assert r["status"] == "needs_review"
-    assert r["model"] == "template-s2"
+    assert r["model"] == "mock-ci"  # S4-strict : mock explicite conftest
     assert any("[ok]" in f for f in r["findings"])
 
 

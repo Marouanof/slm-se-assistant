@@ -1,6 +1,7 @@
-"""Backend FastAPI S1/S2/S3 — analyse Ruff/Bandit via tools allow-listés."""
+"""Backend FastAPI S4-strict — analyse Ruff/Bandit + pipeline SLM obligatoire (aucun fallback)."""
 
 import json
+import os
 import tempfile
 import time
 import uuid
@@ -30,7 +31,7 @@ RUNS_DIR = PROJECT_ROOT / "runs"
 RUNS_FILE = RUNS_DIR / "runs.json"
 TOOL_TIMEOUT_S = agent_tools.TOOL_TIMEOUT_S
 
-app = FastAPI(title="slm-se-assistant S3", version="0.3.0-s3")
+app = FastAPI(title="slm-se-assistant S4-strict", version="0.4.0-s4-strict")
 
 # CORS S3 : UI Vite locale uniquement, jamais de wildcard.
 app.add_middleware(
@@ -60,6 +61,26 @@ def _save_run(record: RunRecord) -> None:
     data = _load_runs()
     data[record.id] = record.model_dump()
     RUNS_FILE.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def _save_error_run(endpoint: str, req_summary: dict, detail: str, latency_ms: int) -> str:
+    """Loggue un run en échec SLM (503) pour garder l'audit LLMOps véridique."""
+    run_id = uuid.uuid4().hex[:12]
+    record = RunRecord(
+        id=run_id,
+        endpoint=endpoint,
+        status="error",
+        latency_ms=latency_ms,
+        created_at=datetime.now(timezone.utc).isoformat(),
+        request_summary=req_summary,
+        result_summary={
+            "error": redact(detail)[:500],
+            "model": os.environ.get("SLM_MODEL", "").strip() or "missing",
+            "prompt_version": _PROMPT_VERSION,
+        },
+    )
+    _save_run(record)
+    return run_id
 
 
 def _resolve_project_path(raw: str) -> Path:
@@ -148,14 +169,20 @@ def analyze(req: AnalyzeRequest) -> AnalyzeResponse:
 def run_tests(req: AnalyzeRequest) -> TestsResponse:
     started = time.perf_counter()
     run_id = uuid.uuid4().hex[:12]
-    # run_pipeline lève 422/404 si path invalide (traversée).
-    result = run_pipeline(code=req.code, path=req.path)
-    latency_ms = int((time.perf_counter() - started) * 1000)
-    files = result.get("files", [])
     if req.code is not None:
-        req_summary = {"mode": "code", "code_len": len(req.code), "preview": redact(req.code[:200])}
+        req_summary: dict = {"mode": "code", "code_len": len(req.code), "preview": redact(req.code[:200])}
     else:
         req_summary = {"mode": "path", "path": redact(req.path or "")}
+    try:
+        # run_pipeline lève 422/404 si path invalide, 503 si SLM manquant/panne (S4-strict).
+        result = run_pipeline(code=req.code, path=req.path)
+    except HTTPException as exc:
+        if exc.status_code == 503:
+            _save_error_run("/tests", req_summary, str(exc.detail),
+                            int((time.perf_counter() - started) * 1000))
+        raise
+    latency_ms = int((time.perf_counter() - started) * 1000)
+    files = result.get("files", [])
     record = RunRecord(
         id=run_id,
         endpoint="/tests",
@@ -193,7 +220,17 @@ def run_tests(req: AnalyzeRequest) -> TestsResponse:
 def run_review(req: AnalyzeRequest) -> ReviewResponse:
     started = time.perf_counter()
     run_id = uuid.uuid4().hex[:12]
-    result = run_pipeline(code=req.code, path=req.path)
+    if req.code is not None:
+        req_summary = {"mode": "code", "code_len": len(req.code), "preview": redact(req.code[:200])}
+    else:
+        req_summary = {"mode": "path", "path": redact(req.path or "")}
+    try:
+        result = run_pipeline(code=req.code, path=req.path)
+    except HTTPException as exc:
+        if exc.status_code == 503:
+            _save_error_run("/review", req_summary, str(exc.detail),
+                            int((time.perf_counter() - started) * 1000))
+        raise
     latency_ms = int((time.perf_counter() - started) * 1000)
     files = result.get("files", [])
     ruff_issues = [
@@ -217,10 +254,6 @@ def run_review(req: AnalyzeRequest) -> ReviewResponse:
         )
         for i in result.get("bandit", [])
     ]
-    if req.code is not None:
-        req_summary = {"mode": "code", "code_len": len(req.code), "preview": redact(req.code[:200])}
-    else:
-        req_summary = {"mode": "path", "path": redact(req.path or "")}
     record = RunRecord(
         id=run_id,
         endpoint="/review",

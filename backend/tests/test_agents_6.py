@@ -1,4 +1,4 @@
-"""Tests 6 agents — Debug, Documentation, DevOps (vague 1, déterministes)."""
+"""Tests 6 agents — Debug, Documentation, DevOps (mock SLM explicite, conftest)."""
 
 from fastapi.testclient import TestClient
 

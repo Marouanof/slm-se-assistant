@@ -72,20 +72,25 @@ Pipeline : `backend/agents/graph.py` (`run_pipeline`), outils allow-list `backen
 - Docker préparé sans bloquer : `backend/Dockerfile`, `frontend/Dockerfile` (compose final S6).
 - Démo : backend 8000 + `npm run dev` 5173 → `/review evals/tasks/task_20_hardcoded_password/solution.py` → `B105` + `needs_review`.
 
-## S4-light — SLM opt-in (revue seule, sans SDK Ollama)
+## S4 — SLM obligatoire, sans fallback (décision CDC §4, expert)
 
 ```powershell
-$env:SLM_MODEL="qwen2.5-coder:0.5b"  # éteint par défaut -> pipeline template-s2 déterministe (CI)
+ollama serve  # obligatoire avant le backend
+$env:SLM_MODEL="qwen2.5-coder:3b"  # principal (1.9 Go Q4_K_M) ; 0.5b en ablation de base
 .\.venv\Scripts\python.exe -m uvicorn backend.main:app --port 8000
-# POST /review -> + llm_explanation (FR) + métriques (tokens in/out, tok/s, TTFT) via /api/generate
-# Panne Ollama -> fallback silencieux (déterminisme intact). Mesuré Ryzen 3 : ~22 tok/s, TTFT ~2.5s.
+# POST /review -> llm_explanation FR obligatoire + métriques (tokens in/out, tok/s, TTFT) via /api/generate
+# Sans SLM ou Ollama éteint -> 503 explicite + run status=error (jamais de template silencieux : CDC §4)
+# Bench : 0.5b (~9.4s/gén) vs 3b (~25-60s/gén estimé sur Ryzen 3). FP16 = T4-only, omission locale justifiée.
+# Tests/CI : mock explicite mock-ci via backend/tests/conftest.py (verte sans masquer, bench S5 100% réel)
 ```
 
-## Limites connues (fin S3)
+## Limites connues (S4-strict)
 
-- Pas de LLM par défaut : pipeline `template-s2` déterministe (CI) ; S4-light opt-in via `SLM_MODEL`
-  (explication FR + tok/s/TTFT sur Revue seule, 0.5B de base perfectible → motive QLoRA + prompt optimisé).
-- Pas de QLoRA (`training/` = stub, S4), pas d'ablations 700 générations (S5).
+- SLM obligatoire sur `/tests` + `/review` : `503` si `SLM_MODEL` vide ou Ollama éteint, run `error` loggé.
+  `/analyze` reste 100% statique (Ruff+Bandit, sans SLM). CI verte via mock explicite `mock-ci`.
+- Modèles locaux : `qwen2.5-coder:0.5b` (base + cible QLoRA) vs `qwen2.5-coder:3b` (comparaison larger/other SLM).
+  Pas de Phi/StarCoder supplémentaire (même classe, coût machine inutile sur 3250U).
+- Pas de QLoRA (`training/` = stub, S4-full à venir), pas d'ablations 700 générations (S5).
 - `runs/` + `frontend/dist/` + `node_modules/` ignorés par Git (audit/build locaux).
 - Benchmark conservé : **20/20 pass** (`evals/run.py --limit 20`), CI backend + frontend vertes.
 - Gel : toute nouvelle feature majeure → S6/baclog uniquement.
