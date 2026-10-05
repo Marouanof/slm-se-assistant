@@ -139,7 +139,8 @@ def search_symbols(code: str) -> dict:
 def _run_ruff(target: Path) -> list[dict]:
     try:
         proc = subprocess.run(
-            [sys.executable, "-m", "ruff", "check", str(target), "--output-format", "json"],
+            [sys.executable, "-m", "ruff", "check", str(target),
+             "--select", "E,F,C901", "--output-format", "json"],
             capture_output=True,
             text=True,
             timeout=TOOL_TIMEOUT_S,
@@ -211,6 +212,38 @@ def test_solution_compiles():
     import py_compile
     py_compile.compile("solution.py", doraise=True)
 '''
+
+
+_C901_RE = re.compile(r"[`'](.+?)[`'] is too complex \((\d+) > \d+\)")
+
+
+def complexity_summary(ruff_issues: list[dict]) -> dict:
+    """Synthèse complexité McCabe depuis les C901 natifs Ruff (0 install).
+
+    Grade maintenabilité simple et déterministe (documenté README) :
+    A = aucun C901 ; B = 1-2 C901 et max<=15 ; C = 3+ C901 ou max 16-20 ; D = max>20.
+    """
+    funcs: dict[str, int] = {}
+    for item in ruff_issues or []:
+        if str(item.get("code", "")) != "C901":
+            continue
+        m = _C901_RE.search(str(item.get("message", "")))
+        if m:
+            name, val = m.group(1), int(m.group(2))
+            funcs[name] = max(funcs.get(name, 0), val)
+    count = len(funcs)
+    mx = max(funcs.values()) if funcs else 0
+    if count == 0:
+        grade = "A"
+    elif count <= 2 and mx <= 15:
+        grade = "B"
+    elif mx <= 20:
+        grade = "C"
+    else:
+        grade = "D"
+    return {"c901_count": count, "max_complexity": mx,
+            "functions": sorted(funcs.items(), key=lambda kv: -kv[1])[:10],
+            "grade": grade}
 
 
 def _write_smoke(tmp: Path) -> None:

@@ -138,7 +138,8 @@ export default function App() {
         <h2>4. Debug + Documentation + Verdict DevOps</h2>
         <p>
           <strong>Cause :</strong> {result.debug_cause || "(aucune)"} · <strong>Verdict :</strong>{" "}
-          {result.devops_verdict} <em>({result.devops_notes})</em>
+          {result.devops_verdict} <em>({result.devops_notes})</em> ·{" "}
+          <strong>Maintenabilité :</strong> {result.maintainability}
         </p>
         <h3>Documentation générée</h3>
         <pre style={{ whiteSpace: "pre-wrap", background: "#f6f6f6", padding: 8 }}>

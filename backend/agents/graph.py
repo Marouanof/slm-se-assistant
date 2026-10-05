@@ -55,12 +55,15 @@ def node_analyse(state: AgentState) -> dict:
         else:
             return {"trajectoire": _traj(state, "analyse:error"), "status": "error"}
         symbols = tools.search_symbols(code or "")
+        complexity = tools.complexity_summary(ruff)
         return {
             "files": files,
             "code_len": code_len,
             "ruff": ruff,
             "bandit": bandit,
             "symbols": symbols,
+            "complexity": complexity,
+            "maintainability": complexity["grade"],
             "tokens_in": tokens_in,
             "trajectoire": _traj(state, "analyse"),
             "status": "ok",
@@ -236,8 +239,11 @@ def node_devops(state: AgentState) -> dict:
     verdict = "NO-GO" if (bloquants or tests_fail) else "GO"
     ruff_n = len(state.get("ruff", []) or [])
     bandit_n = len(state.get("bandit", []) or [])
+    cx = state.get("complexity", {}) or {}
     notes = (f"ruff={ruff_n} bandit={bandit_n} "
-             f"tests={'fail' if tests_fail else 'pass'} bloquants={len(bloquants)}")
+             f"tests={'fail' if tests_fail else 'pass'} bloquants={len(bloquants)} "
+             f"c901={cx.get('c901_count', 0)} complexite_max={cx.get('max_complexity', 0)} "
+             f"grade={state.get('maintainability', 'n/a')}")
     return {
         "devops_verdict": verdict,
         "devops_notes": notes,

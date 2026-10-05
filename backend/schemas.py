@@ -68,6 +68,8 @@ class ReviewResponse(BaseModel):
     documentation: str = ""
     devops_verdict: str = "needs_review"
     devops_notes: str = ""
+    complexity: dict[str, Any] = {}
+    maintainability: str = "n/a"
     llm_explanation: str = ""
     slm_tokens_per_sec: float = 0.0
     slm_ttft_ms: int = 0

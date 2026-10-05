@@ -13,6 +13,8 @@ class AgentState(TypedDict, total=False):
     ruff: list[dict[str, Any]]
     bandit: list[dict[str, Any]]
     symbols: dict[str, Any]
+    complexity: dict[str, Any]
+    maintainability: str
     tests_pass: bool | None
     coverage_pct: float | None
     tests_output: str

@@ -31,6 +31,8 @@ export interface ReviewResponse {
   documentation: string;
   devops_verdict: string;
   devops_notes: string;
+  complexity: Record<string, unknown>;
+  maintainability: string;
   llm_explanation: string;
   slm_tokens_per_sec: number;
   slm_ttft_ms: number;
