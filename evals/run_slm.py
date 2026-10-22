@@ -32,7 +32,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from backend.agents import tools  # noqa: E402
 
 SLM_HOST = tools.SLM_HOST
-CODE_RE = re.compile(r"```(?:python)?\s*(.*?)```", re.DOTALL | re.IGNORECASE)
+CODE_RE = re.compile(r"```[a-zA-Z0-9_+-]*\s*(.*?)```", re.DOTALL)
 
 CAPABILITIES = (
     "code_generation",
@@ -69,7 +69,12 @@ def ollama_generate(
         "model": model,
         "prompt": prompt,
         "stream": False,
-        "options": {"temperature": temperature, "num_predict": num_predict},
+        "options": {
+            "temperature": temperature,
+            "num_predict": num_predict,
+            "seed": 42,
+            "num_ctx": 4096,
+        },
     }
     url = SLM_HOST + "/api/generate"
     resp = httpx.post(url, json=payload, timeout=timeout_s)
