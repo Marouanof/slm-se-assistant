@@ -106,25 +106,126 @@ dans l'ordre du CDC et compatible avec la contrainte Kaggle-only, est :
 
 ## 7. État actuel
 
-- Smoke test : **TERMINÉ** (COMPLETE, val loss 0.8345, SHA256 vérifié).
-- Full run : **TERMINÉ** (COMPLETE, kernel `phi4-sft-full`, v1).
-  - 3 epochs, 810 train / 90 val, 3 tâches (pilot data : code_generation,
-    code_completion, unit_test_generation).
-  - eval_loss final : **0.6511** (vs smoke 0.8345 → amélioration).
-  - eval_loss par epoch : epoch1=0.5710, epoch2=0.5932, epoch3=0.6511 →
-    légère sur-apprentissage à l'epoch 3 ; meilleur = epoch 1 (checkpoint-203).
-  - Adapter-only (34 MB), SHA256 zip vérifié :
-    `9111bf6f7c288a9c135ad8a43f48d23688c1072f91d665d76bf202c66a34dbeb`.
-  - Page : https://www.kaggle.com/code/merouanefaik/phi4-sft-full
-- Eval notebook : **PUSHÉ** (kernel `phi4-sft-eval`, v1).
-  - Charge base Phi-4 FP16 + adapter checkpoint-203 (uploadé comme dataset).
-  - Évalue sur les 6 tâches du benchmark (comparaison base vs fine-tuné).
-  - Page : https://www.kaggle.com/code/merouanefaik/phi4-sft-eval
+### Sandbox d'exécution — FAIT
+
+`harness/scripts/sandbox_runner.py` : exécution isolée (subprocess `python -I`,
+`RLIMIT_CPU/AS/NPROC/FSIZE`, timeout wall-clock, pré-check AST des imports/appels
+dangereux, fichier temporaire supprimé). CPU uniquement.
+
+Résultats re-calculés **sur les sorties déjà sauvegardées** (aucun GPU) :
+
+| tâche | métrique | base | SFT v1 |
+|---|---|---|---|
+| code_generation (242) | pass@1 | **0.6736** | 0.2727 |
+| code_refactoring (60) | pass@1 (comportement préservé) | **0.6667** | 0.4167 |
+| unit_test_generation (85) | suites valides | 0.1059 | **0.2706** |
+| unit_test_generation (85) | mutation kill rate (suites valides) | **1.0000** (23/23) | 0.8871 (55/62) |
+
+➡️ **SFT v1 est une régression** sur la génération et le refactoring. Détail et
+causes racines : `research/01_benchmark/execution_eval_results.md`.
+
+Causes racines identifiées : (1) les 900 complétions du dataset pilote finissent
+par un `|` parasite avant `<|endoftext|>` ; (2) prompt/template d'entraînement
+différents de `prompt_registry.py` ; (3) complétions non fencées et sans imports ;
+(4) 300 exemples/tâche, LR 2e-4, 3 epochs → sur-apprentissage (meilleur epoch 1).
+
+### SFT v2 — TERMINÉ (entraînement + évaluation)
+
+- Dataset `merouanefaik/slm-sft-v2` généré par `harness/scripts/build_sft_v2.py` :
+  796 train / 89 val, prompts **exactement** alignés sur le harness, rendu par
+  `tokenizer.apply_chat_template`, `|` supprimé, code fencé, imports conservés.
+- Notebook `phi4-sft-v2` : **COMPLETE** (2 epochs, LR 1e-4, 199 steps/epoch).
+  Page : https://www.kaggle.com/code/merouanefaik/phi4-sft-v2
+- **eval_loss** : epoch 1 = **0.3864**, epoch 2 = **0.3745** (meilleur).
+  Checkpoints : `checkpoint-199`, `checkpoint-398` (retenu), + `adapter/`.
+- Éval `phi4-sft-v2-eval` : **COMPLETE**, `kernel_sources` (0 MB de modèle),
+  sandbox d'exécution intégré. Détails : `sft_v2_findings.md`,
+  `comparison_phi4_v2.md`.
+
+| tâche | métrique | base | SFT v1 | SFT v2 |
+|---|---|---|---|---|
+| code_generation | pass@1 | **0.6736** | 0.2727 | 0.2851 |
+| code_refactoring | pass@1 | **0.6667** | 0.4167 | 0.4000 |
+| unit_test_generation | suites valides | 0.1059 | 0.2706 | **0.3882** |
+| unit_test_generation | mutation kill (agrégé) | 1.0000 | 0.8871 | 0.9444 |
+| code_explanation | ROUGE-L | **0.1531** | 0.1534 | 0.1272 |
+| bug_detection | F1 | 0.4691 | **0.4902** | 0.0000 |
+| code_completion | exact_match | **0.3494** | 0.3373 | 0.3373 |
+
+➡️ **La v2 n'est pas un gain net.** Seule `unit_test_generation` progresse
+nettement. `code_generation` reste cassée : **102/242** sorties inventent le nom
+de la fonction au lieu de recopier la signature du stub (base : 0/242). Les
+tâches zero-shot s'effondrent (bug_detection prédit toujours `has_bug=false`).
+Conclusion : **routage par tâche** (base pour 5 tâches, SFT v2 pour unit_test)
+ou ré-entraînement moins agressif.
+
+### Qwen2.5-Coder-1.5B — TERMINÉ (entraînement + évaluation)
+
+- Notebook `qwen15-sft-v2` : **COMPLETE** (même dataset `slm-sft-v2`, 2 epochs).
+- **eval_loss** : epoch 1 = **0.3156** (meilleur), epoch 2 = 0.3439
+  (sur-apprentissage) → checkpoint retenu = **checkpoint-199**.
+- Éval `qwen15-sft-v2-eval` : **COMPLETE** en **57 min** (corrigée : `sdpa` au
+  lieu de `eager`, `eos_token_id` explicite, checkpoint-199 auto-sélectionné).
+  Résultats : `comparison_qwen_v2.md`.
+- Page : https://www.kaggle.com/code/merouanefaik/qwen15-sft-v2
+
+| tâche | métrique | Qwen SFT v2 |
+|---|---|---|
+| code_generation | pass@1 | **0.5372** (130/242) |
+| code_refactoring | pass@1 | **0.9167** (55/60) |
+| unit_test_generation | suites valides | **0.4588** (39/85) |
+| unit_test_generation | mutation kill (agrégé) | 0.9140 |
+| code_explanation | ROUGE-L | 0.1755 |
+| bug_detection | F1 | 0.0000 |
+| code_completion | exact_match | 0.2048 |
+
+- Contrairement à Phi-4 v2, Qwen SFT **recopie parfaitement les signatures**
+  (242/242 noms corrects) : ses échecs de `code_generation` sont de vraies
+  erreurs de logique, pas du renommage.
+- `bug_detection` s'effondre aussi (100/100 prédictions `has_bug=false`).
+
+**Base vs SFT v2 (même sandbox) :**
+
+| tâche | métrique | Qwen base | Qwen SFT v2 |
+|---|---|---|---|
+| code_generation | pass@1 | **0.6033** | 0.5248 |
+| code_refactoring | pass@1 | 0.1000 | **0.9167** |
+| unit_test_generation | suites valides | 0.0235 | **0.4588** |
+| unit_test_generation | mutation kill (agrégé) | 0.0000 | **0.9140** |
+| code_explanation | ROUGE-L | 0.1179 | **0.1755** |
+| bug_detection | F1 | **0.1818** | 0.0000 |
+| code_completion | exact_match | **0.2530** | 0.2048 |
+
+Le 0.5248 est le recalcul local (même sandbox que le base) ; le run Kaggle
+officiel donne 0.5372 (3 exemples d'écart, bruit de sandbox).
+
+Le gain en refactoring est surtout un gain de **format** : le Qwen base met un
+bloc `### Changes` en prose *dans* le code (38/60 compilent, 6/60 passent), le
+SFT sort une fonction propre (60/60 compilent, 55/60 passent).
+
+**Routing final (meilleur modèle par tâche, tous modèles confondus) :**
+
+| tâche | meilleur modèle | métrique |
+|---|---|---|
+| code_generation | **Phi-4-mini base** | **0.6736** |
+| code_refactoring | **Qwen SFT v2** | **0.9167** |
+| unit_test_generation | **Qwen SFT v2** | **0.4588** |
+| code_explanation | **Qwen SFT v2** | **0.1755** |
+| bug_detection | **Phi-4-mini base** | **0.4691** |
+| code_completion | **Phi-4-mini base** | **0.3494** |
+
+Deux modèles, trois tâches chacun. Cela remplace la recommandation précédente
+« base pour 5 tâches, SFT pour unit_test seulement ».
+
+### Rappels
+
+- Smoke test v1 : TERMINÉ (val loss 0.8345).
+- Full run v1 : TERMINÉ (eval_loss 0.6511 ; par epoch 0.5710/0.5932/0.6511 ;
+  meilleur = checkpoint-203, adapter 34 MB, SHA256 zip vérifié).
+- Eval v1 : TERMINÉ (6 tâches, comparaison base vs SFT).
 - Limitation connue : SFT couvre 3/6 tâches. Les 3 autres (bug_detection,
-  code_explanation, code_refactoring) sont évaluées en zero-shot (pas de
-  réponse canonique unique pour le SFT). Voir section 6 point 1.
-- À venir : self-distillation filtrée pour les 3 tâches manquantes,
-  quantization, Qwen 1.5B, scoring par exécution.
+  code_explanation, code_refactoring) restent en zero-shot.
+
 
 ## 8. Optimisations retenues
 

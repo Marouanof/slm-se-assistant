@@ -1,0 +1,44 @@
+{
+  "Qwen base": {
+    "code_generation": {
+      "n": 242,
+      "passed": 146,
+      "pass@1": 0.6033
+    },
+    "code_refactoring": {
+      "n": 60,
+      "passed": 6,
+      "pass@1": 0.1
+    },
+    "unit_test_generation": {
+      "n": 85,
+      "valid_suites": 2,
+      "valid_suite_rate": 0.0235,
+      "mutants_total": 2,
+      "mutants_killed": 0,
+      "mutation_kill_rate": 0.0,
+      "problems_with_all_mutants_killed": 0
+    }
+  },
+  "Qwen SFT v2": {
+    "code_generation": {
+      "n": 242,
+      "passed": 127,
+      "pass@1": 0.5248
+    },
+    "code_refactoring": {
+      "n": 60,
+      "passed": 55,
+      "pass@1": 0.9167
+    },
+    "unit_test_generation": {
+      "n": 85,
+      "valid_suites": 39,
+      "valid_suite_rate": 0.4588,
+      "mutants_total": 93,
+      "mutants_killed": 85,
+      "mutation_kill_rate": 0.914,
+      "problems_with_all_mutants_killed": 35
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "id": "merouanefaik/phi4-sft-v2-eval",
+  "title": "Phi4 SFT v2 Eval",
+  "code_file": "phi4-sft-v2-eval.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [
+    "merouanefaik/slm-benchmark-baseline"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [
+    "merouanefaik/phi4-sft-v2"
+  ]
+}

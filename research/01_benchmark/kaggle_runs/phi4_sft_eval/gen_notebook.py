@@ -35,8 +35,26 @@ if torch.cuda.is_available():
     print("gpu", torch.cuda.get_device_name(0), "vram GB", round(torch.cuda.get_device_properties(0).total_memory/1e9,2))
 """))
 
-# ---- Cell 2: Storage paths (copy from baseline cell 5) ----
-cells.append(code("".join(base_cells[5]["source"])))
+# ---- Cell 2: Storage paths (patched for new /kaggle/input/datasets/ mount) ----
+storage_src = "".join(base_cells[5]["source"])
+# Add new glob patterns for the /kaggle/input/datasets/ mount path
+old_patterns = '''_candidates = []
+for _pattern in (
+    os.path.join(INPUT_ROOT, "*", "benchmark"),
+    os.path.join(INPUT_ROOT, "*", "*", "benchmark"),
+    os.path.join(INPUT_ROOT, "*", "*", "*", "benchmark"),
+):'''
+new_patterns = '''_candidates = []
+for _pattern in (
+    os.path.join(INPUT_ROOT, "*", "benchmark"),
+    os.path.join(INPUT_ROOT, "*", "*", "benchmark"),
+    os.path.join(INPUT_ROOT, "*", "*", "*", "benchmark"),
+    os.path.join(INPUT_ROOT, "datasets", "*", "*", "benchmark"),
+    os.path.join(INPUT_ROOT, "datasets", "*", "*", "*", "benchmark"),
+    os.path.join(INPUT_ROOT, "datasets", "*", "*", "*", "*", "benchmark"),
+):'''
+storage_src = storage_src.replace(old_patterns, new_patterns)
+cells.append(code(storage_src))
 
 # ---- Cell 3: Config (modified) ----
 cells.append(code("""# Benchmark configuration (Kaggle-only) - SFT variant
@@ -94,6 +112,7 @@ def resolve_base_source(model_id):
     return model_id
 
 BASE_MODEL_SOURCE = resolve_base_source(MODEL_ID)
+MODEL_SOURCE = BASE_MODEL_SOURCE  # alias for baseline main loop compatibility
 
 # Auto-discover the SFT adapter in mounted Kaggle datasets.
 ADAPTER_SOURCE = None
@@ -156,12 +175,21 @@ cells.append(code("".join(base_cells[9]["source"])))
 # ---- Cell 5: Load datasets (copy from baseline cell 10) ----
 cells.append(code("".join(base_cells[10]["source"])))
 
-# ---- Cell 6: Model loading (modified for adapter) ----
-cells.append(code("""# Load base model in FP16 + PEFT adapter on exactly one GPU.
+# ---- Cell 6: Model loading (Unsloth adapter, avoids peft/transformers mismatch) ----
+cells.append(code("""# Load base model in FP16 + SFT adapter via Unsloth (avoids peft/transformers version mismatch).
 import time
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from peft import PeftModel
+import subprocess, sys
+def pip(pkg):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "--upgrade", pkg])
+try:
+    import unsloth
+    print("unsloth", getattr(unsloth, "__version__", "ok"))
+except Exception as e:
+    print("installing unsloth:", e)
+    pip("unsloth")
+    import unsloth
+from unsloth import FastLanguageModel
 
 if "model" in globals() or "tokenizer" in globals():
     raise RuntimeError("A model/tokenizer is already loaded. Run the unload cell first.")
@@ -185,7 +213,8 @@ _total_vram_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
 print("Active GPU:", _gpu_name, "| VRAM (GB):", round(_total_vram_gb, 2))
 assert _total_vram_gb >= 15.0, f"Expected >=15 GB GPU; found {_total_vram_gb:.2f} GB."
 
-meta = BASE_META
+meta = {"trust_remote_code": False, "attn": "eager"}
+
 load_kwargs = {
     "torch_dtype": torch.float16,
     "device_map": DEVICE_MAP,
@@ -197,6 +226,7 @@ if meta["attn"] is not None:
 
 # Load tokenizer from adapter dir (preserves chat template)
 print("Loading tokenizer from adapter:", ADAPTER_SOURCE)
+from transformers import AutoTokenizer
 tokenizer = AutoTokenizer.from_pretrained(ADAPTER_SOURCE, trust_remote_code=meta["trust_remote_code"])
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
@@ -205,12 +235,14 @@ tokenizer.padding_side = "left"
 # Load base model
 print("Loading base model from", BASE_MODEL_SOURCE)
 t0 = time.time()
+from transformers import AutoModelForCausalLM
 base_model = AutoModelForCausalLM.from_pretrained(BASE_MODEL_SOURCE, **load_kwargs)
 print(f"Base model loaded in {time.time()-t0:.1f}s")
 
 # Apply PEFT adapter
 print("Applying PEFT adapter from", ADAPTER_SOURCE)
 t0 = time.time()
+from peft import PeftModel
 model = PeftModel.from_pretrained(base_model, ADAPTER_SOURCE, torch_dtype=torch.float16)
 model.eval()
 model.config.use_cache = True
@@ -233,8 +265,28 @@ cells.append(code("".join(base_cells[16]["source"])))
 # The baseline checkpointing cell uses MODEL_ID in run_metadata; our MODEL_ID is base model id which is fine.
 cells.append(code("".join(base_cells[18]["source"])))
 
-# ---- Cell 10: Main loop (copy from baseline cell 20, with MODEL_ID/MODEL_SOURCE/MODEL_DIR/SHORT already set) ----
-cells.append(code("".join(base_cells[20]["source"])))
+# ---- Cell 10: Main loop (patched to strip end-of-turn marker before eval) ----
+main_loop_src = "".join(base_cells[20]["source"])
+# Add strip_end_turn helper before the main loop
+helper = '''import re as _re
+def strip_end_turn(text):
+    """Remove trailing Phi-4 end-of-turn marker (| token) and ### Changes section."""
+    text = text.rstrip()
+    # Strip everything after ### Changes (refactoring explanation)
+    if "### Changes" in text:
+        text = text.split("### Changes")[0].rstrip()
+    # Remove trailing |... end-of-turn marker
+    text = _re.sub(r'\\|[^\\n]*$', '', text).rstrip()
+    return text
+
+'''
+main_loop_src = helper + main_loop_src
+# Patch the eval call to use stripped output
+main_loop_src = main_loop_src.replace(
+    '            ev = EVAL_FUNCS[task](record, gen["output"])',
+    '            ev = EVAL_FUNCS[task](record, strip_end_turn(gen["output"]))'
+)
+cells.append(code(main_loop_src))
 
 # ---- Cell 11: Unload (copy from baseline cell 22) ----
 cells.append(code("".join(base_cells[22]["source"])))
