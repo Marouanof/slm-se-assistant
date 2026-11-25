@@ -1,0 +1,17 @@
+{
+  "id": "merouanefaik/slm-benchmark-qwen3-kaggle",
+  "title": "SLM Benchmark Qwen3 Kaggle",
+  "code_file": "baseline_benchmark_full.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": [
+    "merouanefaik/slm-benchmark-baseline"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

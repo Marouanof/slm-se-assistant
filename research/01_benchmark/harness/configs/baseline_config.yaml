@@ -1,0 +1,259 @@
+# Baseline benchmark configuration for three non-fine-tuned Instruct models.
+# Mission 02.2: Kaggle-only execution. No Google Drive, no Colab and no cloud
+# synchronisation.
+#
+# Data is read-only under /kaggle/input/<dataset-slug>/benchmark/.
+# Temporary files, checkpoints, results and the export ZIP live under
+# /kaggle/working/. The session filesystem does not survive disconnection, so
+# the ZIP is downloaded from the Kaggle Output pane after every model run.
+
+experiment:
+  name: "baseline_slm_se_benchmark"
+  mission: "02.2"
+  platform: "kaggle"
+  seed: 42
+  precision: "fp16"
+  temperature: 0.0
+  do_sample: false
+  top_p: 1.0
+  max_new_tokens: 512
+  batch_size: 1
+  one_model_at_a_time: true
+  gpu_target: "NVIDIA T4 16 GB"
+  single_gpu: true
+  device_map: {"": 0}
+  max_input_tokens: 8192
+  # 8192 is a memory guard, not a benchmark truncation target. No test prompt
+  # reaches it (max observed input is 12,068 characters for bug_detection).
+  input_truncation_note: "If a row records input_truncated=True, stop and review it."
+
+# Kaggle-only roots. The notebook auto-discovers the benchmark folder under
+# /kaggle/input; these values document the contract.
+platform_paths:
+  kaggle:
+    input_root: "/kaggle/input"
+    benchmark_root_patterns:
+      - "/kaggle/input/<dataset-slug>/benchmark"
+      - "/kaggle/input/<dataset-slug>/slm-benchmark/benchmark"
+      - "/kaggle/input/<dataset-slug>/<subdir>/benchmark"
+    workdir: "/kaggle/working"
+    results_root: "/kaggle/working/results"
+    checkpoints_root: "/kaggle/working/results"
+    zip_dir: "/kaggle/working"
+    zip_name_pattern: "slm-benchmark_results_<MODE>_<RUN_ID>.zip"
+    download_method: "Kaggle Output pane"
+  local_windows_download: "%USERPROFILE%\\Downloads\\slm-benchmark\\"
+  forbidden:
+    - "Google Drive"
+    - "Drive mounting"
+    - "Colab"
+    - "cloud synchronisation"
+
+paths:
+  datasets_test: "benchmark/datasets/test"
+  datasets_private_test: "benchmark/datasets/private/test"
+  prompts_dir: "benchmark/prompts"
+  checkpoint_every: 1
+  read_only: true
+
+modes:
+  full:
+    label: "official"
+    description: "All 670 test examples."
+    results_subdir: "baseline"
+  smoke_test:
+    label: "smoke"
+    description: "First smoke_per_task rows per task, identical order."
+    results_subdir: "smoke_test"
+  smoke_per_task: 3
+  legacy_aliases:
+    baseline: "full"
+  note: >
+    MODE="full" is stored under results/baseline/ to preserve the Mission
+    02.1 layout. Smoke and official results are never mixed.
+
+results:
+  structure:
+    - "results/smoke_test/qwen15/<RUN_ID>/"
+    - "results/smoke_test/qwen3/<RUN_ID>/"
+    - "results/smoke_test/phi4mini/<RUN_ID>/"
+    - "results/baseline/qwen15/<RUN_ID>/"
+    - "results/baseline/qwen3/<RUN_ID>/"
+    - "results/baseline/phi4mini/<RUN_ID>/"
+    - "results/metadata/run_<RUN_ID>.json"
+    - "results/metadata/progress_<RUN_ID>.json"
+    - "results/metadata/dataset_manifest.json"
+    - "results/metadata/export_manifest.json"
+    - "results/SHA256SUMS.txt"
+  model_dir_map:
+    qwen2.5-coder-1.5b: "qwen15"
+    qwen2.5-coder-3b: "qwen3"
+    phi-4-mini: "phi4mini"
+
+models:
+  - id: "Qwen/Qwen2.5-Coder-1.5B-Instruct"
+    short_name: "qwen2.5-coder-1.5b"
+    model_dir: "qwen15"
+    trust_remote_code: false
+    attn_implementation: null
+    torch_dtype: "float16"
+    source_preference: "kaggle_models_then_huggingface"
+    kaggle_model_path: "/kaggle/input/qwen2.5-coder/transformers/1.5b-instruct/1"
+    kaggle_model_ref: "qwen-lm/qwen2.5-coder/Transformers/1.5b-instruct/1"
+    fp16_weights_gb: 3.09
+    expected_peak_vram_gb: 5.0
+    headroom_on_t4_gb: 10.8
+    verification_status: "static_estimate_not_loaded"
+  - id: "Qwen/Qwen2.5-Coder-3B-Instruct"
+    short_name: "qwen2.5-coder-3b"
+    model_dir: "qwen3"
+    trust_remote_code: false
+    attn_implementation: null
+    torch_dtype: "float16"
+    source_preference: "kaggle_models_then_huggingface"
+    kaggle_model_path: "/kaggle/input/qwen2.5-coder/transformers/3b-instruct/1"
+    kaggle_model_ref: "qwen-lm/qwen2.5-coder/Transformers/3b-instruct/1"
+    fp16_weights_gb: 6.17
+    expected_peak_vram_gb: 8.5
+    headroom_on_t4_gb: 7.3
+    verification_status: "static_estimate_not_loaded"
+  - id: "microsoft/Phi-4-mini-instruct"
+    short_name: "phi-4-mini"
+    model_dir: "phi4mini"
+    trust_remote_code: true
+    attn_implementation: "eager"
+    torch_dtype: "float16"
+    source_preference: "huggingface"
+    kaggle_model_path: null
+    kaggle_model_path_optional: "/kaggle/input/phi-4-mini-instruct/transformers/official-from-huggingface/1/phi-4-mini-instruct"
+    kaggle_model_ref_optional: "kentarctic/phi-4-mini-instruct/Transformers/official-from-huggingface/1"
+    kaggle_model_note: >
+      Community mirror, not an official Microsoft upload. Prefer the Hugging
+      Face model ID unless the mirror files are verified against the official
+      repository.
+    fp16_weights_gb: 7.67
+    expected_peak_vram_gb: 11.5
+    worst_case_peak_vram_gb: 14.0
+    headroom_on_t4_gb: 1.8
+    verification_status: "static_estimate_not_loaded"
+
+tasks:
+  - code_generation
+  - code_explanation
+  - bug_detection
+  - code_refactoring
+  - unit_test_generation
+  - code_completion
+
+decoding:
+  temperature: 0.0
+  do_sample: false
+  top_p: 1.0
+  max_new_tokens: 512
+  repetition_penalty: 1.0
+
+evaluation:
+  code_generation:
+    metric: "pass@1"
+    timeout_s: 10
+    requires_code_execution: true
+  code_explanation:
+    metric: "rouge_l_plus_rubric"
+    requires_code_execution: false
+  bug_detection:
+    metric: "precision_recall_f1"
+    requires_code_execution: false
+  code_refactoring:
+    metric: "compile_and_behaviour_preservation"
+    timeout_s: 10
+    requires_code_execution: true
+  unit_test_generation:
+    metric: "validity_and_mutation_score"
+    timeout_s: 10
+    requires_code_execution: true
+  code_completion:
+    metric: "exact_match_and_edit_similarity"
+    requires_code_execution: false
+
+performance:
+  measure_ttft: true
+  measure_throughput: true
+  measure_vram: true
+  measure_ram: true
+  exclude_model_loading_from_latency: true
+
+runs:
+  mode: "full"
+  legacy_mode_alias: "baseline"
+  mode_dir_map:
+    full: "baseline"
+    smoke_test: "smoke_test"
+  run_id_format: "<model_dir>_<mode>_<UTC timestamp>_<hostname>_<uuid8>"
+  never_overwrite: true
+  resume_within_session: true
+  resume_across_disconnect: false
+  note: >
+    Each (mode, model) run creates its own RUN_ID directory. Re-running the
+    main loop in the same kernel resumes that directory; a new session gets
+    a new RUN_ID, so earlier downloaded ZIPs are never overwritten.
+
+checkpointing:
+  format: ["jsonl", "csv"]
+  resume: true
+  save_after_every_example: true
+  record_failures: true
+  checkpoint_dir: "results/<MODE_DIR>/<model_dir>/<RUN_ID>/"
+  checkpoint_dir_note: "MODE_DIR is baseline for MODE=full and smoke_test for MODE=smoke_test."
+
+export:
+  format: "zip"
+  zip_contains: "results/ (smoke_test, baseline, metadata, SHA256SUMS.txt)"
+  compute_sha256: true
+  hashes:
+    - "every result and metadata file (SHA256SUMS.txt inside the ZIP)"
+    - "the ZIP archive itself (printed in notebook output + .sha256 sidecar)"
+  kaggle_download: "Output pane ZIP download from /kaggle/working/"
+  local_merging: "benchmark/scripts/merge_results.py"
+
+security:
+  execution_backend: "none"
+  allow_unsandboxed_code_execution: false
+  secure_sandbox_available: false
+  tasks_requiring_execution:
+    - code_generation
+    - code_refactoring
+    - unit_test_generation
+  behaviour: >
+    The notebook never executes generated code. The three execution-dependent
+    tasks are generated and recorded with eval={"skipped": true, ...}. Their
+    pass@1, behaviour-preservation and mutation-score metrics are null until a
+    real isolated backend is configured. Do not replace the guard with an
+    unsandboxed subprocess.
+
+kaggle:
+  dataset_bundle: "kaggle_upload/slm-benchmark-baseline/"
+  dataset_layout_required:
+    - "benchmark/datasets/test/*.jsonl"
+    - "benchmark/datasets/private/test/*.jsonl"
+    - "benchmark/prompts/prompt_registry.py"
+  dataset_visibility: "private"
+  notebook_accelerator: "GPU T4 x1"
+  notebook_internet: true
+  notebook_persistence: "Files only"
+  model_sequence:
+    - "Qwen/Qwen2.5-Coder-1.5B-Instruct"
+    - "Qwen/Qwen2.5-Coder-3B-Instruct"
+    - "microsoft/Phi-4-mini-instruct"
+  sequential_note: >
+    Load one model, run the benchmark, export the ZIP, run the unload cell,
+    then switch to the next model.
+
+verification:
+  static_commands:
+    - "python benchmark/scripts/verify_kaggle_readiness.py"
+    - "python benchmark/scripts/validate_baseline_results.py --help"
+    - "python benchmark/scripts/merge_results.py --help"
+    - "python benchmark/scripts/aggregate_baseline.py --help"
+  no_gpu_required: true
+  no_model_loading: true
+  no_notebook_execution: true

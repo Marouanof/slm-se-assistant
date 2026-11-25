@@ -1,0 +1,96 @@
+{
+  "errors": [],
+  "warnings": [],
+  "summary": {
+    "phi4mini/bug_detection [baseline/phi4mini_full_20261120-043821_6ab5d9022c0e_0a9e6e8e]": {
+      "rows": 100,
+      "unique_ids": 100,
+      "path": "baseline\\phi4mini\\phi4mini_full_20261120-043821_6ab5d9022c0e_0a9e6e8e\\bug_detection_results.jsonl"
+    },
+    "phi4mini/code_completion [baseline/phi4mini_full_20261120-043821_6ab5d9022c0e_0a9e6e8e]": {
+      "rows": 83,
+      "unique_ids": 83,
+      "path": "baseline\\phi4mini\\phi4mini_full_20261120-043821_6ab5d9022c0e_0a9e6e8e\\code_completion_results.jsonl"
+    },
+    "phi4mini/code_explanation [baseline/phi4mini_full_20261120-043821_6ab5d9022c0e_0a9e6e8e]": {
+      "rows": 100,
+      "unique_ids": 100,
+      "path": "baseline\\phi4mini\\phi4mini_full_20261120-043821_6ab5d9022c0e_0a9e6e8e\\code_explanation_results.jsonl"
+    },
+    "phi4mini/code_generation [baseline/phi4mini_full_20261120-043821_6ab5d9022c0e_0a9e6e8e]": {
+      "rows": 242,
+      "unique_ids": 242,
+      "path": "baseline\\phi4mini\\phi4mini_full_20261120-043821_6ab5d9022c0e_0a9e6e8e\\code_generation_results.jsonl"
+    },
+    "phi4mini/code_refactoring [baseline/phi4mini_full_20261120-043821_6ab5d9022c0e_0a9e6e8e]": {
+      "rows": 60,
+      "unique_ids": 60,
+      "path": "baseline\\phi4mini\\phi4mini_full_20261120-043821_6ab5d9022c0e_0a9e6e8e\\code_refactoring_results.jsonl"
+    },
+    "phi4mini/unit_test_generation [baseline/phi4mini_full_20261120-043821_6ab5d9022c0e_0a9e6e8e]": {
+      "rows": 85,
+      "unique_ids": 85,
+      "path": "baseline\\phi4mini\\phi4mini_full_20261120-043821_6ab5d9022c0e_0a9e6e8e\\unit_test_generation_results.jsonl"
+    },
+    "qwen15/bug_detection [baseline/qwen15_full_20261114-225848_1c53d7b0b04a_3e846b0a]": {
+      "rows": 100,
+      "unique_ids": 100,
+      "path": "baseline\\qwen15\\qwen15_full_20261114-225848_1c53d7b0b04a_3e846b0a\\bug_detection_results.jsonl"
+    },
+    "qwen15/code_completion [baseline/qwen15_full_20261114-225848_1c53d7b0b04a_3e846b0a]": {
+      "rows": 83,
+      "unique_ids": 83,
+      "path": "baseline\\qwen15\\qwen15_full_20261114-225848_1c53d7b0b04a_3e846b0a\\code_completion_results.jsonl"
+    },
+    "qwen15/code_explanation [baseline/qwen15_full_20261114-225848_1c53d7b0b04a_3e846b0a]": {
+      "rows": 100,
+      "unique_ids": 100,
+      "path": "baseline\\qwen15\\qwen15_full_20261114-225848_1c53d7b0b04a_3e846b0a\\code_explanation_results.jsonl"
+    },
+    "qwen15/code_generation [baseline/qwen15_full_20261114-225848_1c53d7b0b04a_3e846b0a]": {
+      "rows": 242,
+      "unique_ids": 242,
+      "path": "baseline\\qwen15\\qwen15_full_20261114-225848_1c53d7b0b04a_3e846b0a\\code_generation_results.jsonl"
+    },
+    "qwen15/code_refactoring [baseline/qwen15_full_20261114-225848_1c53d7b0b04a_3e846b0a]": {
+      "rows": 60,
+      "unique_ids": 60,
+      "path": "baseline\\qwen15\\qwen15_full_20261114-225848_1c53d7b0b04a_3e846b0a\\code_refactoring_results.jsonl"
+    },
+    "qwen15/unit_test_generation [baseline/qwen15_full_20261114-225848_1c53d7b0b04a_3e846b0a]": {
+      "rows": 85,
+      "unique_ids": 85,
+      "path": "baseline\\qwen15\\qwen15_full_20261114-225848_1c53d7b0b04a_3e846b0a\\unit_test_generation_results.jsonl"
+    },
+    "qwen3/bug_detection [baseline/qwen3_full_20261115-002749_fc15dc76997e_4cf6d793]": {
+      "rows": 100,
+      "unique_ids": 100,
+      "path": "baseline\\qwen3\\qwen3_full_20261115-002749_fc15dc76997e_4cf6d793\\bug_detection_results.jsonl"
+    },
+    "qwen3/code_completion [baseline/qwen3_full_20261115-002749_fc15dc76997e_4cf6d793]": {
+      "rows": 83,
+      "unique_ids": 83,
+      "path": "baseline\\qwen3\\qwen3_full_20261115-002749_fc15dc76997e_4cf6d793\\code_completion_results.jsonl"
+    },
+    "qwen3/code_explanation [baseline/qwen3_full_20261115-002749_fc15dc76997e_4cf6d793]": {
+      "rows": 100,
+      "unique_ids": 100,
+      "path": "baseline\\qwen3\\qwen3_full_20261115-002749_fc15dc76997e_4cf6d793\\code_explanation_results.jsonl"
+    },
+    "qwen3/code_generation [baseline/qwen3_full_20261115-002749_fc15dc76997e_4cf6d793]": {
+      "rows": 242,
+      "unique_ids": 242,
+      "path": "baseline\\qwen3\\qwen3_full_20261115-002749_fc15dc76997e_4cf6d793\\code_generation_results.jsonl"
+    },
+    "qwen3/code_refactoring [baseline/qwen3_full_20261115-002749_fc15dc76997e_4cf6d793]": {
+      "rows": 60,
+      "unique_ids": 60,
+      "path": "baseline\\qwen3\\qwen3_full_20261115-002749_fc15dc76997e_4cf6d793\\code_refactoring_results.jsonl"
+    },
+    "qwen3/unit_test_generation [baseline/qwen3_full_20261115-002749_fc15dc76997e_4cf6d793]": {
+      "rows": 85,
+      "unique_ids": 85,
+      "path": "baseline\\qwen3\\qwen3_full_20261115-002749_fc15dc76997e_4cf6d793\\unit_test_generation_results.jsonl"
+    }
+  }
+}

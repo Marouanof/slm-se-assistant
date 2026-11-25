@@ -1,0 +1,38 @@
+{
+  "run_id": "qwen15_full_20261114-225848_1c53d7b0b04a_3e846b0a",
+  "mode": "full",
+  "model": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
+  "counts": {
+    "code_generation": {
+      "rows": 242,
+      "errors": 0,
+      "skipped": 242
+    },
+    "code_explanation": {
+      "rows": 100,
+      "errors": 0,
+      "skipped": 0
+    },
+    "bug_detection": {
+      "rows": 100,
+      "errors": 0,
+      "skipped": 0
+    },
+    "code_refactoring": {
+      "rows": 60,
+      "errors": 0,
+      "skipped": 60
+    },
+    "unit_test_generation": {
+      "rows": 85,
+      "errors": 0,
+      "skipped": 85
+    },
+    "code_completion": {
+      "rows": 83,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "updated_utc": "2026-11-14T23:56:01.396574+00:00"
+}

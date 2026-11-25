@@ -1,0 +1,110 @@
+{
+  "run_id": "qwen3_full_20261115-002749_fc15dc76997e_4cf6d793",
+  "mode": "full",
+  "mode_dir": "baseline",
+  "model_id": "Qwen/Qwen2.5-Coder-3B-Instruct",
+  "model_source": "Qwen/Qwen2.5-Coder-3B-Instruct",
+  "short": "qwen2.5-coder-3b",
+  "model_dir": "qwen3",
+  "seed": 42,
+  "gen_config": {
+    "temperature": 0.0,
+    "do_sample": false,
+    "top_p": 1.0,
+    "max_new_tokens": 512,
+    "repetition_penalty": 1.0
+  },
+  "max_input_tokens": 8192,
+  "platform": "kaggle",
+  "benchmark_root": "/kaggle/input/slm-benchmark-baseline/slm-benchmark-baseline",
+  "benchmark_root_read_only": true,
+  "results_root": "/kaggle/working/results",
+  "checkpoints_root": "/kaggle/working/results",
+  "zip_dir": "/kaggle/working",
+  "run_dir": "/kaggle/working/results/baseline/qwen3/qwen3_full_20261115-002749_fc15dc76997e_4cf6d793",
+  "single_gpu": true,
+  "device_map": "{'': 0}",
+  "execution_backend": "none",
+  "allow_unsandboxed_code_execution": false,
+  "tasks_requiring_execution": [
+    "code_generation",
+    "code_refactoring",
+    "unit_test_generation"
+  ],
+  "created_utc": "2026-11-15T01:39:49.499002+00:00",
+  "python": "3.13.16 (main, Oct  1 2026, 15:40:24) [GCC 13.3.0]",
+  "platform_str": "Linux-6.18.55+-x86_64-with-glibc2.39",
+  "gpu": "Tesla T4",
+  "tasks": [
+    "code_generation",
+    "code_explanation",
+    "bug_detection",
+    "code_refactoring",
+    "unit_test_generation",
+    "code_completion"
+  ],
+  "smoke_per_task": null,
+  "datasets": {
+    "test/code_generation": {
+      "path": "/kaggle/input/slm-benchmark-baseline/slm-benchmark-baseline/benchmark/datasets/test/code_generation.jsonl",
+      "sha256": "ffef785beb3646d31ea8202b51a230f1377d004b3b0f5db27cbd6a1c8526e17e",
+      "bytes": 261337
+    },
+    "private_test/code_generation": {
+      "path": "/kaggle/input/slm-benchmark-baseline/slm-benchmark-baseline/benchmark/datasets/private/test/code_generation.jsonl",
+      "sha256": "47588685a6f587f46e4e89588d86ddd88ec7cb56f6bb1e939e5494c13b46c833",
+      "bytes": 12635194
+    },
+    "test/code_explanation": {
+      "path": "/kaggle/input/slm-benchmark-baseline/slm-benchmark-baseline/benchmark/datasets/test/code_explanation.jsonl",
+      "sha256": "c75952dd89db04d98fe418e63d79d4e3c3a74148eec8c998d452e1561883ddf2",
+      "bytes": 150960
+    },
+    "private_test/code_explanation": {
+      "path": "/kaggle/input/slm-benchmark-baseline/slm-benchmark-baseline/benchmark/datasets/private/test/code_explanation.jsonl",
+      "sha256": "a0c52e1e319fcaae165ea543b10085a6f261e9af5fdc1ef44307e21c64bd5538",
+      "bytes": 117818
+    },
+    "test/bug_detection": {
+      "path": "/kaggle/input/slm-benchmark-baseline/slm-benchmark-baseline/benchmark/datasets/test/bug_detection.jsonl",
+      "sha256": "96e2f21e455ecfb63c318ea7051d3c1bf662bf9ad60cad78a95a86a1b647694c",
+      "bytes": 246908
+    },
+    "private_test/bug_detection": {
+      "path": "/kaggle/input/slm-benchmark-baseline/slm-benchmark-baseline/benchmark/datasets/private/test/bug_detection.jsonl",
+      "sha256": "88e78baad20eb996e748cc36ca5d95a5f97c81d8a0e481361b23eb9b402c4a8f",
+      "bytes": 17612
+    },
+    "test/code_refactoring": {
+      "path": "/kaggle/input/slm-benchmark-baseline/slm-benchmark-baseline/benchmark/datasets/test/code_refactoring.jsonl",
+      "sha256": "644e10a34e7e87322bbb4fa1204ece4811b46327c342372d3bea420baec39178",
+      "bytes": 69998
+    },
+    "private_test/code_refactoring": {
+      "path": "/kaggle/input/slm-benchmark-baseline/slm-benchmark-baseline/benchmark/datasets/private/test/code_refactoring.jsonl",
+      "sha256": "2f3bac906dac56a4792b05a498d7565c2fd56d37c0a49e9e54add4fa090d05c1",
+      "bytes": 699650
+    },
+    "test/unit_test_generation": {
+      "path": "/kaggle/input/slm-benchmark-baseline/slm-benchmark-baseline/benchmark/datasets/test/unit_test_generation.jsonl",
+      "sha256": "29bceb9c208ac2db414dd21adc201bc247a40a709ac8c712cf9436180da032dc",
+      "bytes": 101897
+    },
+    "private_test/unit_test_generation": {
+      "path": "/kaggle/input/slm-benchmark-baseline/slm-benchmark-baseline/benchmark/datasets/private/test/unit_test_generation.jsonl",
+      "sha256": "6fddd32f81961c9a08e230b7194e6589ad040b9c86f8cf4469f27c5b75e1a782",
+      "bytes": 1099145
+    },
+    "test/code_completion": {
+      "path": "/kaggle/input/slm-benchmark-baseline/slm-benchmark-baseline/benchmark/datasets/test/code_completion.jsonl",
+      "sha256": "f6464cd0e4836f3de4c118f3a3fc7feb33e4a91f919d877682ad77580ff1346c",
+      "bytes": 57468
+    },
+    "private_test/code_completion": {
+      "path": "/kaggle/input/slm-benchmark-baseline/slm-benchmark-baseline/benchmark/datasets/private/test/code_completion.jsonl",
+      "sha256": "44051d7d7bc9839feb8598e7530a64462d4fbdd3322bf2d1d0e6003487d71864",
+      "bytes": 20010
+    }
+  },
+  "note": "Kaggle-only temporary filesystem. No generated code is executed. Download the ZIP before disconnecting."
+}

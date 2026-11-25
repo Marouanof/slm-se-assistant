@@ -37,3 +37,8 @@ Thumbs.db
 LLM Software Engineering 2026 LSI.pdf
 LLM Software Engineering 2026 LSI.txt
 *.pdf
+
+# Benchmark datasets (incl. hidden references / reponses cachees)
+# -> ne jamais les committer (repo public). Garder en local / Kaggle prive.
+research/01_benchmark/harness/datasets/
+kaggle_upload/
