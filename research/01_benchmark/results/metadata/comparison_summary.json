@@ -30,8 +30,8 @@
       "avg_tokens_per_s": 21.33843373493976,
       "avg_ttft_s": 0.13730361445783132,
       "max_vram_gb": 11.594,
-      "exact_match": 0.18072289156626506,
-      "avg_edit_similarity": 0.3843228915662651
+      "exact_match": 0.3493975903614458,
+      "avg_edit_similarity": 0.7500012048192771
     },
     "code_explanation": {
       "n": 100,
@@ -125,8 +125,8 @@
       "avg_tokens_per_s": 25.59132530120482,
       "avg_ttft_s": 0.10862168674698794,
       "max_vram_gb": 4.728,
-      "exact_match": 0.0963855421686747,
-      "avg_edit_similarity": 0.3757843373493976
+      "exact_match": 0.25301204819277107,
+      "avg_edit_similarity": 0.6610759036144579
     },
     "code_explanation": {
       "n": 100,
@@ -220,8 +220,8 @@
       "avg_tokens_per_s": 18.733975903614457,
       "avg_ttft_s": 0.1131987951807229,
       "max_vram_gb": 8.333,
-      "exact_match": 0.0,
-      "avg_edit_similarity": 0.0
+      "exact_match": 0.3253012048192771,
+      "avg_edit_similarity": 0.689289156626506
     },
     "code_explanation": {
       "n": 100,
