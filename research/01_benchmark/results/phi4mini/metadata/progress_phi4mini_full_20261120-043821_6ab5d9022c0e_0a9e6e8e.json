@@ -1,0 +1,38 @@
+{
+  "run_id": "phi4mini_full_20261120-043821_6ab5d9022c0e_0a9e6e8e",
+  "mode": "full",
+  "model": "microsoft/Phi-4-mini-instruct",
+  "counts": {
+    "code_generation": {
+      "rows": 242,
+      "errors": 0,
+      "skipped": 242
+    },
+    "code_explanation": {
+      "rows": 100,
+      "errors": 0,
+      "skipped": 0
+    },
+    "bug_detection": {
+      "rows": 100,
+      "errors": 0,
+      "skipped": 0
+    },
+    "code_refactoring": {
+      "rows": 60,
+      "errors": 0,
+      "skipped": 60
+    },
+    "unit_test_generation": {
+      "rows": 85,
+      "errors": 0,
+      "skipped": 85
+    },
+    "code_completion": {
+      "rows": 83,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "updated_utc": "2026-11-20T05:30:27.715088+00:00"
+}

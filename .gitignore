@@ -32,3 +32,8 @@ runs/
 Thumbs.db
 .vscode/
 .idea/
+
+# Documents source (trop volumineux / generes)
+LLM Software Engineering 2026 LSI.pdf
+LLM Software Engineering 2026 LSI.txt
+*.pdf
