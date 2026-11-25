@@ -46,14 +46,16 @@ base number (0.6033) is the same sandbox, so the regression is real.
 
 | task | best model | metric | runner-up |
 |---|---|---|---|
-| code_generation | **Phi-4-mini base** | **0.6736** | Qwen base 0.6033 |
-| code_refactoring | **Qwen SFT v2** | **0.9167** | Phi-4 base 0.6667 |
-| unit_test_generation | **Qwen SFT v2** | **0.4588** | Phi-4 SFT v2 0.3882 |
-| code_explanation | **Qwen SFT v2** | **0.1755** | Phi-4 base 0.1531 |
-| bug_detection | **Phi-4-mini base** | **0.4691** | Qwen base 0.1818 |
-| code_completion | **Phi-4-mini base** | **0.3494** | Qwen base 0.2530 |
+| code_generation | **Qwen 3B base** | **0.7397** | Phi-4 base 0.6736 |
+| code_refactoring | **Qwen 1.5B SFT v2** | **0.9167** | Phi-4 base 0.6667 |
+| unit_test_generation | **Qwen 1.5B SFT v2** | **0.4588** | Phi-4 SFT v2 0.3882 |
+| code_explanation | **Qwen 1.5B SFT v2** | **0.1755** | Phi-4 base 0.1531 |
+| bug_detection | **Qwen 3B base** | **0.5470** | Phi-4 base 0.4691 |
+| code_completion | **Phi-4-mini base** | **0.3494** | Qwen 3B base 0.3253 |
 
-Two models, three tasks each: Phi-4 base for code_generation, bug_detection and
-code_completion; Qwen SFT v2 for code_refactoring, unit_test_generation and
-code_explanation. This supersedes the earlier "base for 5 tasks, SFT for
-unit_test only" recommendation.
+Three models: Qwen 3B base (2 tasks), Qwen 1.5B SFT v2 (3), Phi-4 base (1).
+The 3B is base-only; a 3B SFT is the best future ablation. A 2-model
+simplification is possible: Qwen 3B base for code_generation, bug_detection and
+completion (0.3253 vs 0.3494, −2.4 pts), Qwen 1.5B SFT for the other three.
+This supersedes the earlier "base for 5 tasks, SFT for unit_test only"
+recommendation.

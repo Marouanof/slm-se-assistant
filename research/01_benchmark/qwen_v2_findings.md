@@ -105,17 +105,20 @@ sandbox, so the −7.9 pt regression is real.
 
 ## Routing implications
 
-Qwen SFT v2 is the best model for:
+Qwen 1.5B SFT v2 is the best model for:
 
 - `code_refactoring` (0.9167),
 - `unit_test_generation` (0.4588 valid suites),
 - `code_explanation` (0.1755 ROUGE-L).
 
+Qwen 3B base is the best for:
+
+- `code_generation` (0.7397),
+- `bug_detection` (F1 0.5470).
+
 Phi-4 base remains the best for:
 
-- `code_generation` (0.6736),
-- `bug_detection` (0.4691),
 - `code_completion` (0.3494).
 
-The final routing table is in `comparison_qwen_v2.md`: two models, three tasks
-each.
+The final routing table is in `comparison_qwen_v2.md`: three models. The 3B is
+base-only; a 3B SFT is the best future ablation.

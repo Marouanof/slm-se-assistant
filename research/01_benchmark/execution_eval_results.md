@@ -208,18 +208,48 @@ platform/sandbox noise). The base number uses the same local sandbox, so the
 the base Qwen puts `### Changes` prose inside the fence, while the SFT model
 emits a clean function.
 
+## Qwen2.5-Coder-3B base (zero-shot)
+
+Same prompts, private tests and sandbox. No SFT.
+
+| task | metric | Qwen 3B base |
+|---|---|---|
+| code_generation | pass@1 | **0.7397** (179/242) |
+| code_refactoring | pass@1 | 0.0000 (0/60) |
+| unit_test_generation | valid suites | 0.1176 (10/85) |
+| unit_test_generation | mutation kill (aggregate) | 1.0000 (19/19) |
+| code_explanation | ROUGE-L | 0.1065 |
+| bug_detection | F1 | **0.5470** |
+| code_completion | exact_match | 0.3253 |
+| code_completion | edit_similarity | 0.6893 |
+
+- Best `code_generation` (0.7397) and `bug_detection` (F1 0.5470) of the project.
+- `code_refactoring` 0.0 is the same format failure as the 1.5B base: the
+  `### Changes` prose is inside the fence, so no test passes. The 1.5B SFT v2
+  (0.9167) is the fix.
+- Unit tests: only 10/85 valid suites, but 19/19 mutants killed on those
+  suites; coverage is too low versus the 1.5B SFT (39/85 valid, 0.914
+  aggregate).
+- Explanation (0.1065) is below Phi-4 base (0.1531) and 1.5B SFT (0.1755);
+  completion (0.3253) is slightly below Phi-4 base (0.3494).
+- Cost: ~20–80% slower than the 1.5B depending on the task, ~8.5 GB VRAM.
+
 ## Final routing
 
-Best model per task across Phi-4 base, Phi-4 SFT v2 and Qwen SFT v2:
+Best model per task across Phi-4 base, Phi-4 SFT v2, Qwen 1.5B SFT v2 and
+Qwen 3B base:
 
 | task | best model | metric | runner-up |
 |---|---|---|---|
-| code_generation | **Phi-4-mini base** | **0.6736** | Qwen base 0.6033 |
-| code_refactoring | **Qwen SFT v2** | **0.9167** | Phi-4 base 0.6667 |
-| unit_test_generation | **Qwen SFT v2** | **0.4588** | Phi-4 SFT v2 0.3882 |
-| code_explanation | **Qwen SFT v2** | **0.1755** | Phi-4 base 0.1531 |
-| bug_detection | **Phi-4-mini base** | **0.4691** | Qwen base 0.1818 |
-| code_completion | **Phi-4-mini base** | **0.3494** | Qwen base 0.2530 |
+| code_generation | **Qwen 3B base** | **0.7397** | Phi-4 base 0.6736 |
+| code_refactoring | **Qwen 1.5B SFT v2** | **0.9167** | Phi-4 base 0.6667 |
+| unit_test_generation | **Qwen 1.5B SFT v2** | **0.4588** | Phi-4 SFT v2 0.3882 |
+| code_explanation | **Qwen 1.5B SFT v2** | **0.1755** | Phi-4 base 0.1531 |
+| bug_detection | **Qwen 3B base** | **0.5470** | Phi-4 base 0.4691 |
+| code_completion | **Phi-4-mini base** | **0.3494** | Qwen 3B base 0.3253 |
 
-Two models, three tasks each. This supersedes the earlier "base for 5 tasks,
-SFT for unit_test only" recommendation.
+Three models: Qwen 3B base (2 tasks), Qwen 1.5B SFT v2 (3), Phi-4 base (1).
+A 2-model simplification is possible: Qwen 3B base for code_generation,
+bug_detection and completion (0.3253 vs 0.3494, −2.4 pts), Qwen 1.5B SFT for
+the other three. This supersedes the earlier "base for 5 tasks, SFT for
+unit_test only" recommendation.

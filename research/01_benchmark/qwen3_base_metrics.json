@@ -1,0 +1,21 @@
+{
+  "code_generation": {
+    "n": 242,
+    "passed": 179,
+    "pass@1": 0.7397
+  },
+  "code_refactoring": {
+    "n": 60,
+    "passed": 0,
+    "pass@1": 0.0
+  },
+  "unit_test_generation": {
+    "n": 85,
+    "valid_suites": 10,
+    "valid_suite_rate": 0.1176,
+    "mutants_total": 19,
+    "mutants_killed": 19,
+    "mutation_kill_rate": 1.0,
+    "problems_with_all_mutants_killed": 10
+  }
+}

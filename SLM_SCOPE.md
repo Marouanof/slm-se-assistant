@@ -203,19 +203,63 @@ Le gain en refactoring est surtout un gain de **format** : le Qwen base met un
 bloc `### Changes` en prose *dans* le code (38/60 compilent, 6/60 passent), le
 SFT sort une fonction propre (60/60 compilent, 55/60 passent).
 
+### Qwen2.5-Coder-3B — base zero-shot (pas de SFT)
+
+- Modèle **base uniquement**, mêmes prompts/private tests/sandbox.
+- **code_generation : pass@1 0.7397** (179/242) → meilleur score du projet.
+- **bug_detection : F1 0.5470** → meilleur score du projet.
+- **code_refactoring : 0.0000** (0/60) : même problème de format que le 1.5B
+  base (`### Changes` dans le code).
+- **unit_test_generation : 10/85 suites valides** (0.1176), mais 19/19 mutants
+  tués sur ces suites ; couverture trop faible face au 1.5B SFT (39/85, 0.914
+  agrégé).
+- **code_explanation : ROUGE-L 0.1065**, sous Phi-4 base (0.1531) et Qwen 1.5B
+  SFT (0.1755).
+- **code_completion : exact 0.3253**, légèrement sous Phi-4 base (0.3494).
+- Coût : ~20–80 % plus lent que le 1.5B selon la tâche, VRAM ~8,5 Go.
+- Le **SFT 3B** est la meilleure ablation future, mais ~2× plus coûteux.
+
 **Routing final (meilleur modèle par tâche, tous modèles confondus) :**
 
 | tâche | meilleur modèle | métrique |
 |---|---|---|
-| code_generation | **Phi-4-mini base** | **0.6736** |
-| code_refactoring | **Qwen SFT v2** | **0.9167** |
-| unit_test_generation | **Qwen SFT v2** | **0.4588** |
-| code_explanation | **Qwen SFT v2** | **0.1755** |
-| bug_detection | **Phi-4-mini base** | **0.4691** |
+| code_generation | **Qwen 3B base** | **0.7397** |
+| code_refactoring | **Qwen 1.5B SFT v2** | **0.9167** |
+| unit_test_generation | **Qwen 1.5B SFT v2** | **0.4588** |
+| code_explanation | **Qwen 1.5B SFT v2** | **0.1755** |
+| bug_detection | **Qwen 3B base** | **0.5470** |
 | code_completion | **Phi-4-mini base** | **0.3494** |
 
-Deux modèles, trois tâches chacun. Cela remplace la recommandation précédente
-« base pour 5 tâches, SFT pour unit_test seulement ».
+Trois modèles : Qwen 3B base (2 tâches), Qwen 1.5B SFT (3 tâches), Phi-4 base
+(1 tâche). Simplification possible à 2 modèles : 3B base pour code_generation /
+bug_detection / completion (0.3253 vs 0.3494, −2,4 pts), 1.5B SFT pour le reste.
+
+### SFT v3 — dataset 6 tâches (entraînement en cours)
+
+Le SFT v2 ne couvrait que 3/6 tâches et faisait s'effondrer `bug_detection`.
+Le dataset v3 (`slm-sft-v3`, privé sur Kaggle) couvre les 6 tâches :
+
+- **3 872 train / 298 validation**, validation équilibrée à ~50 exemples/tâche.
+- Sources : MBPP full train+validation via le pilote v2 (les IDs MBPP+ du
+  benchmark sont exclus), CodeXGLUE defect detection train/validation, et
+  CodeXGLUE code-to-text **validation** (16,7 Mo au lieu du train de 291 Mo).
+- `bug_detection` : 1 200 exemples équilibrés 600/600, labels réels ; les
+  champs `location` / `description` / `fix` sont **templatés**, seul `has_bug`
+  est supervisé.
+- `code_explanation` : 1 200 exemples ; la docstring CodeXGLUE est placée sous
+  `## Purpose`, les autres sections restent courtes.
+- `code_refactoring` : 236 exemples d'**identité** (même fonction en entrée et
+  sortie) pour apprendre le contrat de sortie, pas une stratégie de refactoring.
+- `code_generation` : 236 exemples MBPP + 500 exemples de replay CodeXGLUE
+  (fonctions réelles, filtre auto-contenu), soit 736.
+- Aucun overlap exact avec le benchmark ; le test privé n'est lu que pour
+  calculer les hashes de contrôle, jamais écrit dans le dataset.
+- Le notebook filtre les exemples > 2 048 tokens avant entraînement pour ne pas
+  tronquer silencieusement les complétions (surtout les fonctions C longues).
+
+**Statut :** kernel Kaggle `merouanefaik/qwen15-sft-v3` lancé, résultats non
+disponibles. Ne pas annoncer de gain avant l'évaluation 6 tâches dans le même
+sandbox.
 
 ### Rappels
 
@@ -223,8 +267,9 @@ Deux modèles, trois tâches chacun. Cela remplace la recommandation précédent
 - Full run v1 : TERMINÉ (eval_loss 0.6511 ; par epoch 0.5710/0.5932/0.6511 ;
   meilleur = checkpoint-203, adapter 34 MB, SHA256 zip vérifié).
 - Eval v1 : TERMINÉ (6 tâches, comparaison base vs SFT).
-- Limitation connue : SFT couvre 3/6 tâches. Les 3 autres (bug_detection,
-  code_explanation, code_refactoring) restent en zero-shot.
+- Limitation connue : le SFT **v2** couvre 3/6 tâches. Les 3 autres
+  (bug_detection, code_explanation, code_refactoring) restent en zero-shot.
+  Le dataset **v3** couvre 6/6, mais ses résultats sont encore en attente.
 
 
 ## 8. Optimisations retenues
