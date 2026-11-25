@@ -1,0 +1,15 @@
+{
+  "id": "merouanefaik/phi4-sft-smoke-test",
+  "title": "Phi4 SFT Smoke Test",
+  "code_file": "phi4-sft-smoke.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [
+    "merouanefaik/phi4-sft-pilot-formatted"
+  ],
+  "competition_sources": [],
+  "kernel_sources": []
+}

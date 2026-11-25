@@ -1,0 +1,15 @@
+{
+  "id": "merouanefaik/phi4-sft-full",
+  "title": "Phi4 SFT Full",
+  "code_file": "phi4-sft-full.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [
+    "merouanefaik/phi4-sft-pilot-formatted"
+  ],
+  "competition_sources": [],
+  "kernel_sources": []
+}
