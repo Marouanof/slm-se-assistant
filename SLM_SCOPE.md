@@ -224,17 +224,19 @@ SFT sort une fonction propre (60/60 compilent, 55/60 passent).
 | tâche | meilleur modèle | métrique |
 |---|---|---|
 | code_generation | **Qwen 3B base** | **0.7397** |
-| code_refactoring | **Qwen 1.5B SFT v2** | **0.9167** |
-| unit_test_generation | **Qwen 1.5B SFT v2** | **0.4588** |
-| code_explanation | **Qwen 1.5B SFT v2** | **0.1755** |
+| code_refactoring | **Qwen 1.5B SFT v3** | **0.9833** |
+| unit_test_generation | **Qwen 1.5B SFT v3** | **0.5412** |
+| code_explanation | **Qwen 1.5B SFT v3** | **0.2092** |
 | bug_detection | **Qwen 3B base** | **0.5470** |
 | code_completion | **Phi-4-mini base** | **0.3494** |
 
-Trois modèles : Qwen 3B base (2 tâches), Qwen 1.5B SFT (3 tâches), Phi-4 base
+Trois modèles : Qwen 3B base (2 tâches), Qwen 1.5B SFT v3 (3 tâches), Phi-4 base
 (1 tâche). Simplification possible à 2 modèles : 3B base pour code_generation /
-bug_detection / completion (0.3253 vs 0.3494, −2,4 pts), 1.5B SFT pour le reste.
+bug_detection / completion (0.3253 vs 0.3494, -2,4 pts), 1.5B SFT v3 pour le
+reste. Le SFT 3B v3 est en cours pour tester s'il peut récupérer
+code_generation et bug_detection.
 
-### SFT v3 — dataset 6 tâches (entraînement terminé, évaluation en cours)
+### SFT v3 — dataset 6 tâches (terminé : entraînement + évaluation)
 
 Le SFT v2 ne couvrait que 3/6 tâches et faisait s'effondrer `bug_detection`.
 Le dataset v3 (`slm-sft-v3`, privé sur Kaggle) couvre les 6 tâches :
@@ -263,9 +265,31 @@ Le dataset v3 (`slm-sft-v3`, privé sur Kaggle) couvre les 6 tâches :
 0,4240. ZIP 278 451 244 octets, SHA256
 `873532da1bf5e6f96e48e412dae6e17dae2bd52be4ca77a9fed82f784dc886ff`.
 
-**Statut évaluation :** kernel `merouanefaik/qwen15-sft-v3-eval` lancé avec
-`checkpoint-968` auto-sélectionné. Résultats 6 tâches non disponibles. Ne pas
-annoncer de gain avant l'évaluation dans le même sandbox.
+**Évaluation : TERMINÉE** — kernel `merouanefaik/qwen15-sft-v3-eval`,
+`checkpoint-968`, sandbox `sandbox_subprocess`. ZIP résultats 100 159 octets,
+SHA256 `269615a681c0674e8200aa0fb5fa4c0afe0fbb799eb81d9b8ae1f7e4ba10f4a6`,
+14 fichiers internes vérifiés.
+
+| tâche | métrique | v3 | v2 | delta vs v2 |
+|---|---|---:|---:|---:|
+| code_generation | pass@1 | 0.5165 (125/242) | 0.5372 | −0.0207 |
+| code_refactoring | pass@1 | **0.9833** (59/60) | 0.9167 | **+0.0666** |
+| unit_test_generation | suites valides | **0.5412** (46/85) | 0.4588 | **+0.0824** |
+| unit_test_generation | mutation kill agrégé | 0.9286 | 0.9140 | +0.0146 |
+| unit_test_generation | valide + tue tous | 0.4824 (41/85) | 0.4118 | **+0.0706** |
+| code_explanation | ROUGE-L | **0.2092** | 0.1755 | **+0.0337** |
+| bug_detection | F1 | **0.0000** | 0.0000 | 0.0000 |
+| code_completion | exact_match | 0.2651 (22/83) | 0.2048 | **+0.0603** |
+| code_completion | edit_similarity | 0.6721 | 0.6330 | +0.0391 |
+
+La v3 est un **gain net sur v2** : meilleure sur refactoring, tests unitaires,
+explication et completion. Elle reste sous le 3B base pour code_generation et
+bug_detection. `bug_detection` reste effondrée : 100/100 prédictions
+`has_bug=false`, JSON valide, F1 0.0 — le signal C n'est pas appris par le 1.5B.
+
+**SFT 3B v3 :** lancé (`merouanefaik/qwen3-sft-v3`) pour tester si la capacité
+3B récupère code_generation / bug_detection tout en gardant les gains de format.
+Aucun résultat 3B SFT pour l'instant.
 
 ### Rappels
 
@@ -273,10 +297,10 @@ annoncer de gain avant l'évaluation dans le même sandbox.
 - Full run v1 : TERMINÉ (eval_loss 0.6511 ; par epoch 0.5710/0.5932/0.6511 ;
   meilleur = checkpoint-203, adapter 34 MB, SHA256 zip vérifié).
 - Eval v1 : TERMINÉ (6 tâches, comparaison base vs SFT).
-- Limitation connue : le SFT **v2** couvre 3/6 tâches. Les 3 autres
-  (bug_detection, code_explanation, code_refactoring) restent en zero-shot.
-  Le dataset **v3** couvre 6/6 ; son évaluation est en cours, aucun résultat
-  n'est encore publiable.
+- Limitation connue : le SFT **v2** ne couvrait que 3/6 tâches. Le dataset
+  **v3** couvre 6/6 et est évalué. Il améliore refactoring, tests unitaires,
+  explication et completion, mais `bug_detection` reste à F1 0.0 (classe
+  négative uniquement) et code_generation reste sous le 3B base.
 
 
 ## 8. Optimisations retenues

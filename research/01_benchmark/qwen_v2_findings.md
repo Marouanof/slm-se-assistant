@@ -1,5 +1,9 @@
 # Qwen2.5-Coder-1.5B SFT v2 — findings
 
+> Historical. The six-task v3 adapter improves `code_refactoring`,
+> `unit_test_generation`, `code_explanation` and `code_completion`; see
+> `qwen_v3_findings.md` for the current numbers and routing.
+
 ## Setup
 
 - Same harness-aligned `slm-sft-v2` dataset as Phi-4 (796 train / 89 validation,

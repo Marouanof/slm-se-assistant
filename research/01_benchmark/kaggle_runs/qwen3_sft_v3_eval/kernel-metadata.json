@@ -1,0 +1,17 @@
+{
+  "id": "merouanefaik/qwen3-sft-v3-eval",
+  "title": "Qwen3 SFT v3 Eval",
+  "code_file": "qwen3-sft-v3-eval.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [
+    "merouanefaik/slm-benchmark-baseline"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [
+    "merouanefaik/qwen3-sft-v3"
+  ]
+}

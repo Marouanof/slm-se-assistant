@@ -53,15 +53,14 @@ efficient per example.
 ## Routing
 
 - **Qwen 3B base** for `code_generation` and `bug_detection`.
-- **Qwen 1.5B SFT v2** for `code_refactoring`, `unit_test_generation` and
-  `code_explanation`.
+- **Qwen 1.5B SFT v3** for `code_refactoring` (0.9833), `unit_test_generation`
+  (0.5412) and `code_explanation` (0.2092).
 - **Phi-4 base** for `code_completion`.
 
 A 2-model simplification is possible: Qwen 3B base for code_generation,
 bug_detection and completion (0.3253 vs 0.3494, −2.4 pts on completion), Qwen
-1.5B SFT for the other three. It avoids loading Phi-4 for a single task.
+1.5B SFT v3 for the other three. It avoids loading Phi-4 for a single task.
 
-A **3B SFT** is the best future ablation: it could combine the 3B base strength
-with the SFT gains, but training and eval are ~2× more expensive. The six-task
-v3 dataset is now available; the 3B SFT should be run only if the 1.5B v3
-evaluation shows gains over the v2/3B routing.
+The **3B SFT v3** ablation is now running (`merouanefaik/qwen3-sft-v3`) because
+the 1.5B v3 showed gains on three tasks. It could combine the 3B base strength
+with the v3 output-format gains; eval pending.

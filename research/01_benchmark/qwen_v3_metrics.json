@@ -1,0 +1,64 @@
+{
+  "model": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
+  "adapter": "checkpoint-968",
+  "eval_loss": 0.4205579459667206,
+  "train_runtime_s": 3353.4616,
+  "train_loss": 0.5801,
+  "train_rows_kept": 3870,
+  "train_rows_total": 3872,
+  "val_rows": 298,
+  "train_zip_sha256": "873532da1bf5e6f96e48e412dae6e17dae2bd52be4ca77a9fed82f784dc886ff",
+  "eval_zip_sha256": "269615a681c0674e8200aa0fb5fa4c0afe0fbb799eb81d9b8ae1f7e4ba10f4a6",
+  "eval_run": "qwen15_sft_v3_full_20261126-010051_2fcc6d06785f_eaca474f",
+  "execution_backend": "sandbox_subprocess",
+  "tasks": {
+    "code_generation": {
+      "n": 242,
+      "pass@1": 0.5165289256198347,
+      "passed": 125,
+      "compile_ok": 0.9958677685950413,
+      "executed": 240
+    },
+    "code_refactoring": {
+      "n": 60,
+      "pass@1": 0.9833333333333333,
+      "passed": 59,
+      "compile_ok": 1.0,
+      "executed": 59,
+      "changed": 1.0
+    },
+    "unit_test_generation": {
+      "n": 85,
+      "valid_suite_rate": 0.5411764705882353,
+      "valid_suites": 46,
+      "syntax_ok": 0.9882352941176471,
+      "mutation_kill_aggregate": 0.9285714285714286,
+      "mutants_killed": 104,
+      "mutants_total": 112,
+      "valid_and_kills_all": 41
+    },
+    "code_explanation": {
+      "n": 100,
+      "rouge_l": 0.20919103786801124,
+      "headings_ok": 0.98
+    },
+    "bug_detection": {
+      "n": 100,
+      "tp": 0,
+      "fp": 0,
+      "fn": 50,
+      "tn": 50,
+      "accuracy": 0.5,
+      "precision": null,
+      "recall": 0.0,
+      "f1": 0.0,
+      "pred_true": 0
+    },
+    "code_completion": {
+      "n": 83,
+      "exact_match": 0.26506024096385544,
+      "edit_similarity": 0.6720602409638555,
+      "exact_matches": 22
+    }
+  }
+}

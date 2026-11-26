@@ -1,6 +1,8 @@
 # SFT v3 data card — six tasks
 
-Status: **dataset built; Qwen 1.5B training running; no v3 metrics yet.**
+Status: **dataset built; Qwen 1.5B training and six-task evaluation complete;
+3B SFT v3 ablation running.** The 1.5B v3 results are in
+`qwen_v3_findings.md`.
 
 ## Purpose
 
@@ -84,7 +86,8 @@ near-duplicate check would require an embedding pass and is not claimed here.
 The training notebook tokenises every row with the Qwen tokenizer and drops
 rows longer than 2,048 tokens before training. This prevents the assistant
 completion from being silently truncated, especially for long C functions.
-The exact kept counts are printed in the Kaggle training log.
+The v3 run kept **3 870 / 3 872** train rows (2 dropped) and **298 / 298**
+validation rows.
 
 ## Regenerate
 

@@ -234,22 +234,48 @@ Same prompts, private tests and sandbox. No SFT.
   completion (0.3253) is slightly below Phi-4 base (0.3494).
 - Cost: ~20–80% slower than the 1.5B depending on the task, ~8.5 GB VRAM.
 
+## Qwen2.5-Coder-1.5B SFT v3 (six tasks)
+
+Dataset `slm-sft-v3`: 3 872 train / 298 validation, all six tasks. Training:
+2 epochs, 1 936 steps, 55.9 min, Unsloth 4-bit, LoRA r=16/alpha=32. Best
+`checkpoint-968` (eval_loss 0.4206). Eval: same prompts/private tests/sandbox,
+`checkpoint-968` selected automatically.
+
+| task | metric | Qwen SFT v3 | Qwen SFT v2 | delta |
+|---|---|---|---|---|
+| code_generation | pass@1 | 0.5165 (125/242) | 0.5372 (130/242) | −0.0207 |
+| code_refactoring | pass@1 | **0.9833** (59/60) | 0.9167 (55/60) | **+0.0666** |
+| unit_test_generation | valid suites | **0.5412** (46/85) | 0.4588 (39/85) | **+0.0824** |
+| unit_test_generation | mutation kill (aggregate) | 0.9286 (104/112) | 0.9140 (85/93) | +0.0146 |
+| unit_test_generation | valid + kills all mutants | 0.4824 (41/85) | 0.4118 (35/85) | **+0.0706** |
+| code_explanation | ROUGE-L | **0.2092** | 0.1755 | **+0.0337** |
+| bug_detection | F1 | 0.0000 | 0.0000 | 0.0000 |
+| code_completion | exact_match | 0.2651 (22/83) | 0.2048 (17/83) | **+0.0603** |
+| code_completion | edit_similarity | 0.6721 | 0.6330 | +0.0391 |
+
+The v3 ZIP SHA256 is
+`269615a681c0674e8200aa0fb5fa4c0afe0fbb799eb81d9b8ae1f7e4ba10f4a6`
+(100 159 bytes); the 14 internal checksums verified. `bug_detection` is still
+100/100 `has_bug=false` with valid JSON, so the 1.5B model did not learn the C
+defect signal. Qwen 3B base remains the bug_detection model.
+
 ## Final routing
 
-Best model per task across Phi-4 base, Phi-4 SFT v2, Qwen 1.5B SFT v2 and
+Best model per task across Phi-4 base, Phi-4 SFT v2, Qwen 1.5B SFT v2/v3 and
 Qwen 3B base:
 
 | task | best model | metric | runner-up |
 |---|---|---|---|
 | code_generation | **Qwen 3B base** | **0.7397** | Phi-4 base 0.6736 |
-| code_refactoring | **Qwen 1.5B SFT v2** | **0.9167** | Phi-4 base 0.6667 |
-| unit_test_generation | **Qwen 1.5B SFT v2** | **0.4588** | Phi-4 SFT v2 0.3882 |
-| code_explanation | **Qwen 1.5B SFT v2** | **0.1755** | Phi-4 base 0.1531 |
+| code_refactoring | **Qwen 1.5B SFT v3** | **0.9833** | Qwen 1.5B SFT v2 0.9167 |
+| unit_test_generation | **Qwen 1.5B SFT v3** | **0.5412** | Qwen 1.5B SFT v2 0.4588 |
+| code_explanation | **Qwen 1.5B SFT v3** | **0.2092** | Qwen 1.5B SFT v2 0.1755 |
 | bug_detection | **Qwen 3B base** | **0.5470** | Phi-4 base 0.4691 |
 | code_completion | **Phi-4-mini base** | **0.3494** | Qwen 3B base 0.3253 |
 
-Three models: Qwen 3B base (2 tasks), Qwen 1.5B SFT v2 (3), Phi-4 base (1).
+Three models: Qwen 3B base (2 tasks), Qwen 1.5B SFT v3 (3), Phi-4 base (1).
 A 2-model simplification is possible: Qwen 3B base for code_generation,
-bug_detection and completion (0.3253 vs 0.3494, −2.4 pts), Qwen 1.5B SFT for
-the other three. This supersedes the earlier "base for 5 tasks, SFT for
-unit_test only" recommendation.
+bug_detection and completion (0.3253 vs 0.3494, −2.4 pts), Qwen 1.5B SFT v3 for
+the other three. The 3B SFT v3 ablation is running; it could replace both the
+3B base and the 1.5B SFT if it retains the base code_generation/bug_detection
+scores while learning the v3 output formats.

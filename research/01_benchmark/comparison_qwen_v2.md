@@ -1,5 +1,9 @@
 # Qwen2.5-Coder-1.5B — base vs SFT v2
 
+> Historical comparison. The v3 adapter supersedes SFT v2 on `code_refactoring`,
+> `unit_test_generation` and `code_explanation`; see `qwen_v3_findings.md` and
+> `execution_eval_results.md` for the current routing.
+
 Same prompts, same private tests, same sandbox (`sandbox_runner.py`). The SFT run
 uses `checkpoint-199` (eval_loss 0.3156). Execution metrics are recomputed
 locally for **both** runs, so the comparison is methodologically identical.
