@@ -1,0 +1,15 @@
+{
+  "id": "merouanefaik/phi4-sft-v3",
+  "title": "Phi4 SFT v3",
+  "code_file": "phi4-sft-v3.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [
+    "merouanefaik/slm-sft-v3"
+  ],
+  "competition_sources": [],
+  "kernel_sources": []
+}
