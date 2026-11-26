@@ -42,6 +42,11 @@ code-generation replay examples, and it keeps the download small.
 The MBPP pilot uses MBPP full train+validation with every MBPP+ benchmark id
 removed. The builder re-checks the numeric ids and drops any overlap.
 
+105 CodeXGLUE functions appear in both the code-generation replay set and the
+code-explanation set. They use different prompts and are multi-task training
+examples, not duplicate rows within one task; there is no benchmark test
+overlap.
+
 ## What is actually supervised
 
 - `code_generation`: complete fenced function. 236 MBPP examples plus 500
