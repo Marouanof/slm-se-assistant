@@ -1,9 +1,8 @@
 # Qwen2.5-Coder-1.5B SFT v3 — findings
 
 **Status: training and six-task evaluation complete. The 3B SFT v3 ablation is
-running.** The numbers below come from the Kaggle eval sandbox; a local
-`compare_runs.py` recomputation is in progress and will be recorded in
-`comparison_qwen_v3.md`.
+running.** The numbers below come from the Kaggle eval sandbox; the local
+`compare_runs.py` recomputation is recorded in `comparison_qwen_v3.md`.
 
 ## Setup
 

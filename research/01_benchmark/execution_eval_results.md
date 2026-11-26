@@ -255,9 +255,13 @@ Dataset `slm-sft-v3`: 3 872 train / 298 validation, all six tasks. Training:
 
 The v3 ZIP SHA256 is
 `269615a681c0674e8200aa0fb5fa4c0afe0fbb799eb81d9b8ae1f7e4ba10f4a6`
-(100 159 bytes); the 14 internal checksums verified. `bug_detection` is still
-100/100 `has_bug=false` with valid JSON, so the 1.5B model did not learn the C
-defect signal. Qwen 3B base remains the bug_detection model.
+(100 159 bytes); the 14 internal checksums verified. The local
+`compare_runs.py` recomputation matches the v3 numbers exactly
+(`comparison_qwen_v3.md`). It reports 0.6074 / 0.7438 for the 1.5B / 3B base
+code_generation, 1–2 examples above the earlier values; the ranking and routing
+are unchanged. `bug_detection` is still 100/100 `has_bug=false` with valid JSON,
+so the 1.5B model did not learn the C defect signal. Qwen 3B base remains the
+bug_detection model.
 
 ## Final routing
 
