@@ -61,6 +61,6 @@ A 2-model simplification is possible: Qwen 3B base for code_generation,
 bug_detection and completion (0.3253 vs 0.3494, −2.4 pts on completion), Qwen
 1.5B SFT v3 for the other three. It avoids loading Phi-4 for a single task.
 
-The **3B SFT v3** ablation is now running (`merouanefaik/qwen3-sft-v3`) because
-the 1.5B v3 showed gains on three tasks. It could combine the 3B base strength
-with the v3 output-format gains; eval pending.
+The **3B SFT v3** ablation trained successfully (`merouanefaik/qwen3-sft-v3`):
+best `checkpoint-968`, eval_loss 0.3949, 80.3 min. It could combine the 3B base
+strength with the v3 output-format gains; six-task eval is running.

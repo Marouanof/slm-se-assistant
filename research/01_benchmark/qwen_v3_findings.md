@@ -69,11 +69,12 @@ and bug_detection stay on Qwen 3B base, completion stays on Phi-4 base.
 
 ## 3B SFT v3 ablation
 
-The 1.5B v3 showed gains, so the planned 3B SFT v3 ablation is running
-(`merouanefaik/qwen3-sft-v3`, same dataset/hyperparameters). It is the only
-remaining chance to combine the 3B base strength on code_generation and
-bug_detection with the SFT output-format gains. It will be evaluated with the
-same six-task harness only if training completes.
+The 1.5B v3 showed gains, so the planned 3B SFT v3 ablation was run
+(`merouanefaik/qwen3-sft-v3`, same dataset/hyperparameters). Training completed:
+2 epochs, 1 936 steps, **80.3 min**, `train_loss` 0.5404; best
+`checkpoint-968` with **eval_loss 0.3949** (epoch 2 = 0.4048). 3 870/3 872 train
+and 298/298 validation rows kept. The six-task eval is running with
+`checkpoint-968`. No 3B SFT metric is claimed until it returns.
 
 ## Cost
 

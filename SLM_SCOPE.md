@@ -287,9 +287,15 @@ explication et completion. Elle reste sous le 3B base pour code_generation et
 bug_detection. `bug_detection` reste effondrée : 100/100 prédictions
 `has_bug=false`, JSON valide, F1 0.0 — le signal C n'est pas appris par le 1.5B.
 
-**SFT 3B v3 :** lancé (`merouanefaik/qwen3-sft-v3`) pour tester si la capacité
-3B récupère code_generation / bug_detection tout en gardant les gains de format.
-Aucun résultat 3B SFT pour l'instant.
+**SFT 3B v3 — entraînement : TERMINÉ** — kernel
+`merouanefaik/qwen3-sft-v3`, 2 epochs, 1 936 steps, `train_runtime` 4 821 s
+(**80,3 min**), `train_loss` 0,5404. `eval_loss` : epoch 1 = **0,3949**
+(meilleur, `checkpoint-968`), epoch 2 = 0,4048. 3 870/3 872 train et 298/298
+validation conservés. ZIP SHA256 (sidecar)
+`2ee0438c377b1916df419183a531e41f295a46c8be8faf2e7017505104bf75fe` (non
+re-téléchargé localement). **Évaluation 6 tâches lancée** :
+`merouanefaik/qwen3-sft-v3-eval`, `checkpoint-968`. Aucun résultat 3B SFT pour
+l'instant.
 
 ### Rappels
 
