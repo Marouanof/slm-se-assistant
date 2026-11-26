@@ -74,9 +74,9 @@ The 3B SFT is heavier than the 1.5B v3:
 | bug_detection | 2.90 s | 2.08 s | 7.5 GB |
 | code_completion | 1.39 s | 1.42 s | 8.5 GB |
 
-It is ~1.3–1.7× slower on the generative tasks and uses ~1.7× the VRAM. It is
-still a small model that fits a T4, but the 1.5B is cheaper for the tasks it
-wins.
+It is up to ~1.7× slower on code_generation/refactoring/unit tests (explanation
+and completion are similar) and uses ~1.7× the VRAM. It is still a small model
+that fits a T4, but the 1.5B is cheaper for the tasks it wins.
 
 ## Routing
 

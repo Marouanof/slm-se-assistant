@@ -90,17 +90,19 @@ Exclus de ce document (gérés par l'ami) :
 
 ## 6. Prochaine étape logique (next step)
 
-Le baseline d'inférence est fait. L'étape suivante,
-dans l'ordre du CDC et compatible avec la contrainte Kaggle-only, est :
+Le baseline, le SFT v2/v3 (1.5B et 3B) et l'évaluation six tâches sont faits.
+Reste, dans l'ordre du CDC et compatible avec la contrainte Kaggle-only :
 
-1. **Préparer les données de fine-tuning** (local, CPU) : générer les splits
-   train/dev pour les 6 tâches SE à partir de `datasets/processed/`.
-2. **Notebook Kaggle de fine-tuning** (Unsloth + LoRA/QLoRA) pour les 3 SLMs
-   sur T4, avec checkpointing et export ZIP (comme le baseline).
-3. **Compléter le scoring par exécution** (pass@k, test pass rate) via un
-   backend sandboxé sur Kaggle (ou différer si bloqué — garder `skipped`).
-4. **Quantization + optimisation** (INT4/8, KV cache, prompts) sur Kaggle.
-5. **Évaluation complète + ablations** sur Kaggle, puis agrégation locale.
+1. **Quantization** INT8/INT4 sur Kaggle, export des poids quantifiés et GGUF,
+   puis ablation FP16 vs quantifié (métriques + latence/mémoire).
+2. **Optimisation tokens/prompts** (prompt optimisé, contexte réduit, KV cache,
+   batching) avec mesures de latence, throughput, mémoire et coût par tâche.
+3. **Métriques manquantes** : pass@k, couverture des tests, sécurité
+   (prompt injection / code dangereux), qualité de code, énergie si mesurable.
+4. **Rapport final consolidé** et **démo ≤ 5 min** des étapes SLM.
+
+Le rapport consolidé actuel (statut partiel, gaps CDC listés) est
+`research/01_benchmark/final_report.md`.
 
 > Règle : toute étape GPU = notebook Kaggle. Local = données + merge + rapport.
 
@@ -328,8 +330,10 @@ Le 3B SFT **ne récupère pas** les deux tâches visées : code_generation reste
 `has_bug=false`, JSON valide). Il est en revanche **meilleur sur les tests
 unitaires** (51/85 vs 46/85 pour le 1.5B v3 ; 47/85 valides + tuent tous les
 mutants vs 41/85) et fait **jeu égal en explication** (0,2093 vs 0,2092). Le
-refactoring perd 1 exemple face au 1.5B v3 (58/60 vs 59/60). Il est ~1,3–1,7×
-plus lent et utilise ~1,7× plus de VRAM que le 1.5B v3.
+refactoring perd 1 exemple face au 1.5B v3 (58/60 vs 59/60). Il est jusqu'à
+~1,7× plus lent sur code_generation / refactoring / tests unitaires
+(explication et completion sont proches) et utilise ~1,7× plus de VRAM que le
+1.5B v3.
 
 ### Rappels
 

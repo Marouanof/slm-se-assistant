@@ -294,8 +294,9 @@ internal checksums verified.
   50 TN, valid JSON). The 3B SFT did not recover the two tasks it was meant to
   fix.
 - **Completion** is below Phi-4 base and the 3B base.
-- Cost: ~1.3–1.7× slower than the 1.5B v3 on generative tasks and ~8.5 GB VRAM
-  vs ~4.8 GB.
+- Cost: up to ~1.7× slower than the 1.5B v3 on
+  code_generation/refactoring/unit tests (explanation and completion are
+  similar), and ~8.5 GB VRAM vs ~4.8 GB.
 
 ## Final routing
 
