@@ -263,23 +263,72 @@ are unchanged. `bug_detection` is still 100/100 `has_bug=false` with valid JSON,
 so the 1.5B model did not learn the C defect signal. Qwen 3B base remains the
 bug_detection model.
 
+## Qwen2.5-Coder-3B SFT v3 (six tasks)
+
+Same v3 dataset, prompts, private tests and sandbox as the 1.5B v3. Training:
+2 epochs, 1 936 steps, **80.3 min**, `train_loss` 0.5404; eval **76.5 min**; best
+`checkpoint-968` with **eval_loss 0.3949** (epoch 2 = 0.4048). Eval ZIP 97 152
+bytes, SHA256
+`9f626900b48816744bdcc4298af93c6a4f0b11dc3a2ea6497ce7436c5765bb89`; all 14
+internal checksums verified.
+
+| task | metric | 3B SFT v3 | 3B base | 1.5B SFT v3 |
+|---|---|---|---|---|
+| code_generation | pass@1 | 0.6322 (153/242) | **0.7438** (180/242) | 0.5165 (125/242) |
+| code_refactoring | pass@1 | 0.9667 (58/60) | 0.0000 | **0.9833** (59/60) |
+| unit_test_generation | valid suites | **0.6000** (51/85) | 0.1176 (10/85) | 0.5412 (46/85) |
+| unit_test_generation | mutation kill (aggregate) | 0.9389 (123/131) | 1.0000 (19/19) | 0.9286 (104/112) |
+| unit_test_generation | valid + kills all mutants | **0.5529** (47/85) | 0.1176 (10/85) | 0.4824 (41/85) |
+| code_explanation | ROUGE-L | **0.2093** | 0.1065 | 0.2092 |
+| bug_detection | F1 | 0.0000 | **0.5470** | 0.0000 |
+| code_completion | exact_match | 0.3133 (26/83) | 0.3253 | 0.2651 (22/83) |
+
+- **Unit tests are the win**: 51/85 valid suites and 47/85 that also kill every
+  mutant, versus 46/85 and 41/85 for the 1.5B v3. This is the best unit-test
+  model of the project.
+- **Explanation is a tie** (0.2093 vs 0.2092); extra 3B capacity does not help
+  ROUGE-L.
+- **Refactoring** is one example lower than the 1.5B v3 (58/60 vs 59/60).
+- **Code generation** is better than the 1.5B v3 but still 11.2 pts below the
+  3B base. **Bug detection remains collapsed** at F1 0.0 (0 TP / 0 FP / 50 FN /
+  50 TN, valid JSON). The 3B SFT did not recover the two tasks it was meant to
+  fix.
+- **Completion** is below Phi-4 base and the 3B base.
+- Cost: ~1.3–1.7× slower than the 1.5B v3 on generative tasks and ~8.5 GB VRAM
+  vs ~4.8 GB.
+
 ## Final routing
 
-Best model per task across Phi-4 base, Phi-4 SFT v2, Qwen 1.5B SFT v2/v3 and
-Qwen 3B base:
+Best model per task across Phi-4 base, Phi-4 SFT v2, Qwen 1.5B SFT v2/v3,
+Qwen 3B base and Qwen 3B SFT v3 (ties broken by cost):
 
 | task | best model | metric | runner-up |
 |---|---|---|---|
-| code_generation | **Qwen 3B base** | **0.7397** | Phi-4 base 0.6736 |
-| code_refactoring | **Qwen 1.5B SFT v3** | **0.9833** | Qwen 1.5B SFT v2 0.9167 |
-| unit_test_generation | **Qwen 1.5B SFT v3** | **0.5412** | Qwen 1.5B SFT v2 0.4588 |
-| code_explanation | **Qwen 1.5B SFT v3** | **0.2092** | Qwen 1.5B SFT v2 0.1755 |
+| code_generation | **Qwen 3B base** | **0.7438** | Phi-4 base 0.6736 |
+| code_refactoring | **Qwen 1.5B SFT v3** | **0.9833** | Qwen 3B SFT v3 0.9667 |
+| unit_test_generation | **Qwen 3B SFT v3** | **0.6000** | Qwen 1.5B SFT v3 0.5412 |
+| code_explanation | **Qwen 1.5B SFT v3** | **0.2092** (tie with 3B SFT 0.2093; 1.5B cheaper) | Qwen 1.5B SFT v2 0.1755 |
 | bug_detection | **Qwen 3B base** | **0.5470** | Phi-4 base 0.4691 |
 | code_completion | **Phi-4-mini base** | **0.3494** | Qwen 3B base 0.3253 |
 
-Three models: Qwen 3B base (2 tasks), Qwen 1.5B SFT v3 (3), Phi-4 base (1).
-A 2-model simplification is possible: Qwen 3B base for code_generation,
-bug_detection and completion (0.3253 vs 0.3494, −2.4 pts), Qwen 1.5B SFT v3 for
-the other three. The 3B SFT v3 ablation is running; it could replace both the
-3B base and the 1.5B SFT if it retains the base code_generation/bug_detection
-scores while learning the v3 output formats.
+**Recommended deployment:** Qwen 3B base for `code_generation` and
+`bug_detection`; Qwen 1.5B SFT v3 for `code_refactoring` and
+`code_explanation`; the Qwen 3B SFT v3 adapter for `unit_test_generation` only;
+Phi-4 base for `code_completion`. The 3B SFT adapter shares the already-loaded
+3B base, so it adds no base weights. It buys 5/85 valid suites and 6/85
+valid+kill-all over the 1.5B v3, at ~1.7× unit-test latency.
+
+**3-model simplification (current routing):** drop the 3B SFT adapter and let
+the 1.5B v3 handle unit tests too. Unit tests fall from 0.6000 to 0.5412 (5
+problems), but this is faster, lower-VRAM and unchanged elsewhere. This is the
+default when simplicity or cost dominates.
+
+**Alternative with two base weights:** Qwen 3B base for code_generation,
+bug_detection and completion (0.3253 vs 0.3494, −2.4 pts), with the 3B SFT
+adapter for refactoring, unit tests and explanation. This drops the 1.5B and
+Phi-4, loses one refactoring example, gains five unit problems and ties
+explanation.
+
+The 3B SFT did **not** recover code_generation or bug_detection, so the 3B base
+remains the model for those two tasks. The 3B SFT is a targeted unit-test
+upgrade, not a replacement for the 3B base.

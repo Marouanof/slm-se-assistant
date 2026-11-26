@@ -1,8 +1,10 @@
 # SFT v3 data card — six tasks
 
-Status: **dataset built; Qwen 1.5B training and six-task evaluation complete;
-3B SFT v3 ablation running.** The 1.5B v3 results are in
-`qwen_v3_findings.md`.
+Status: **dataset built; Qwen 1.5B and 3B SFT v3 training and six-task
+evaluation complete.** The 1.5B v3 results are in `qwen_v3_findings.md`; the 3B
+SFT results are in `qwen3_sft_v3_findings.md`. The 3B SFT is a targeted
+unit-test upgrade, not a replacement for the 3B base on
+code_generation/bug_detection.
 
 ## Purpose
 

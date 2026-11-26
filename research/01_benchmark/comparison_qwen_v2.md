@@ -58,7 +58,8 @@ base number (0.6033) is the same sandbox, so the regression is real.
 | code_completion | **Phi-4-mini base** | **0.3494** | Qwen 3B base 0.3253 |
 
 Three models: Qwen 3B base (2 tasks), Qwen 1.5B SFT v2 (3), Phi-4 base (1).
-The 3B is base-only; a 3B SFT is the best future ablation. A 2-model
+The 3B is base-only; a 3B SFT was later run (see
+`qwen3_sft_v3_findings.md`). A 2-model
 simplification is possible: Qwen 3B base for code_generation, bug_detection and
 completion (0.3253 vs 0.3494, −2.4 pts), Qwen 1.5B SFT for the other three.
 This supersedes the earlier "base for 5 tasks, SFT for unit_test only"

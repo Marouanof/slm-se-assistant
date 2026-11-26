@@ -1,8 +1,9 @@
 # Qwen2.5-Coder-1.5B SFT v3 — findings
 
-**Status: training and six-task evaluation complete. The 3B SFT v3 ablation is
-running.** The numbers below come from the Kaggle eval sandbox; the local
-`compare_runs.py` recomputation is recorded in `comparison_qwen_v3.md`.
+**Status: training and six-task evaluation complete, including the 3B SFT v3
+ablation.** The numbers below come from the Kaggle eval sandbox; the local
+`compare_runs.py` recomputation is recorded in `comparison_qwen_v3.md`. The 3B
+SFT details are in `qwen3_sft_v3_findings.md`.
 
 ## Setup
 
@@ -52,10 +53,12 @@ the unit-test suites ran through the pytest shim.
 ## Reading
 
 - **v3 is a net gain over v2**: it improves refactoring, unit tests, explanation
-  and completion. It becomes the best model on `code_refactoring` (0.9833),
-  `unit_test_generation` (0.5412) and `code_explanation` (0.2092).
+  and completion. It is the best model at 1.5B on `code_refactoring` (0.9833),
+  `unit_test_generation` (0.5412) and `code_explanation` (0.2092); the 3B SFT
+  later edges unit tests to 0.6000 and ties explanation at 0.2093.
 - **code_generation** is slightly below v2 and still far below Qwen 3B base
-  (0.7397); the six-task data did not fix the SFT code-generation regression.
+  (0.7438 locally); the six-task data did not fix the SFT code-generation
+  regression.
 - **bug_detection remains collapsed**: all 100 predictions are
   `has_bug=false` (0 TP / 0 FP / 50 FN / 50 TN), so F1 = 0.0. This is not a
   parsing issue — every output is valid JSON. The 1.5B model did not learn the
@@ -64,8 +67,9 @@ the unit-test suites ran through the pytest shim.
 - **code_completion** improves over v2 but stays below Phi-4 base (0.3494).
 
 The 1.5B v3 gains are real but task-specific. The current three-model routing
-should replace SFT v2 with SFT v3 on the three tasks it wins; code_generation
-and bug_detection stay on Qwen 3B base, completion stays on Phi-4 base.
+replaces SFT v2 with SFT v3 on the three tasks it wins; code_generation and
+bug_detection stay on Qwen 3B base, completion stays on Phi-4 base. The 3B SFT
+adds an optional unit-test upgrade (see below).
 
 ## 3B SFT v3 ablation
 
@@ -73,8 +77,26 @@ The 1.5B v3 showed gains, so the planned 3B SFT v3 ablation was run
 (`merouanefaik/qwen3-sft-v3`, same dataset/hyperparameters). Training completed:
 2 epochs, 1 936 steps, **80.3 min**, `train_loss` 0.5404; best
 `checkpoint-968` with **eval_loss 0.3949** (epoch 2 = 0.4048). 3 870/3 872 train
-and 298/298 validation rows kept. The six-task eval is running with
-`checkpoint-968`. No 3B SFT metric is claimed until it returns.
+and 298/298 validation rows kept. Six-task eval completed with the same
+prompts/private tests/sandbox: ZIP SHA256
+`9f626900b48816744bdcc4298af93c6a4f0b11dc3a2ea6497ce7436c5765bb89`, 14
+internal checksums verified.
+
+- Best **unit_test_generation** of the project: **0.6000** (51/85 valid suites;
+  47/85 valid + kill-all) vs 0.5412 (46/85; 41/85) for the 1.5B v3.
+- **code_explanation** is a tie: 0.2093 vs 0.2092.
+- **code_refactoring** is one example lower: 0.9667 (58/60) vs 0.9833 (59/60).
+- **code_generation** is 0.6322 (153/242), still 11.2 pts below the 3B base
+  (0.7438); **bug_detection remains F1 0.0** (100/100 `has_bug=false`). The 3B
+  SFT did not recover the two tasks it was meant to fix.
+- **code_completion** is 0.3133, below Phi-4 base (0.3494) and the 3B base
+  (0.3253).
+
+The 3B SFT is therefore a targeted **unit-test upgrade**, not a replacement for
+the 3B base. The recommended deployment keeps the 3B base for
+code_generation/bug_detection, the 1.5B v3 for refactoring/explanation, adds the
+3B SFT adapter for unit tests only, and keeps Phi-4 for completion. Dropping
+the adapter returns to the three-model routing and costs 5/85 unit tests.
 
 ## Cost
 

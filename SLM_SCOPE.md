@@ -217,24 +217,38 @@ SFT sort une fonction propre (60/60 compilent, 55/60 passent).
   SFT (0.1755).
 - **code_completion : exact 0.3253**, légèrement sous Phi-4 base (0.3494).
 - Coût : ~20–80 % plus lent que le 1.5B selon la tâche, VRAM ~8,5 Go.
-- Le **SFT 3B** est la meilleure ablation future, mais ~2× plus coûteux.
+- Le **SFT 3B v3** a été réalisé : il ne récupère pas code_generation /
+  bug_detection, mais devient le meilleur modèle sur les tests unitaires
+  (0,6000) ; voir la section SFT v3 ci-dessous.
 
-**Routing final (meilleur modèle par tâche, tous modèles confondus) :**
+**Routing final (meilleur modèle par tâche, tous modèles confondus ; égalités
+tranchées par le coût) :**
 
 | tâche | meilleur modèle | métrique |
 |---|---|---|
-| code_generation | **Qwen 3B base** | **0.7397** |
+| code_generation | **Qwen 3B base** | **0.7438** (local ; 0.7397 Kaggle) |
 | code_refactoring | **Qwen 1.5B SFT v3** | **0.9833** |
-| unit_test_generation | **Qwen 1.5B SFT v3** | **0.5412** |
-| code_explanation | **Qwen 1.5B SFT v3** | **0.2092** |
+| unit_test_generation | **Qwen 3B SFT v3** | **0.6000** |
+| code_explanation | **Qwen 1.5B SFT v3** | **0.2092** (3B SFT 0.2093, égalité) |
 | bug_detection | **Qwen 3B base** | **0.5470** |
 | code_completion | **Phi-4-mini base** | **0.3494** |
 
-Trois modèles : Qwen 3B base (2 tâches), Qwen 1.5B SFT v3 (3 tâches), Phi-4 base
-(1 tâche). Simplification possible à 2 modèles : 3B base pour code_generation /
-bug_detection / completion (0.3253 vs 0.3494, -2,4 pts), 1.5B SFT v3 pour le
-reste. Le SFT 3B v3 est en cours pour tester s'il peut récupérer
-code_generation et bug_detection.
+**Déploiement recommandé** : Qwen 3B base (code_generation, bug_detection),
+Qwen 1.5B SFT v3 (refactoring, explication), **adapter Qwen 3B SFT v3 pour
+unit_test_generation uniquement**, Phi-4 base (completion). L'adapter 3B SFT
+partage les poids du 3B base déjà chargé ; il apporte **+5/85 suites valides**
+et **+6/85 valides + tuent tous les mutants** par rapport au 1.5B v3, au prix
+d'une latence ~1,7× sur cette tâche (10,6 s vs 6,2 s).
+
+**Simplification 3 modèles (routing actuel)** : retirer l'adapter 3B SFT et
+laisser le 1.5B v3 faire les tests unitaires. On perd 5 problèmes (0,6000 →
+0,5412) mais on garde le modèle le plus rapide et le moins gourmand en VRAM.
+C'est le choix par défaut si la simplicité/le coût priment.
+
+**Alternative 2 modèles de base** : 3B base pour code_generation, bug_detection
+et completion (0,3253 vs Phi-4 0,3494, −2,4 pts), adapter 3B SFT pour
+refactoring / unit / explication. On retire le 1.5B et Phi-4, on perd 1 exemple
+de refactoring, on gagne 5 tests unitaires et on égalise l'explication.
 
 ### SFT v3 — dataset 6 tâches (terminé : entraînement + évaluation)
 
@@ -287,15 +301,35 @@ explication et completion. Elle reste sous le 3B base pour code_generation et
 bug_detection. `bug_detection` reste effondrée : 100/100 prédictions
 `has_bug=false`, JSON valide, F1 0.0 — le signal C n'est pas appris par le 1.5B.
 
-**SFT 3B v3 — entraînement : TERMINÉ** — kernel
+**SFT 3B v3 — entraînement + évaluation : TERMINÉS** — kernel
 `merouanefaik/qwen3-sft-v3`, 2 epochs, 1 936 steps, `train_runtime` 4 821 s
 (**80,3 min**), `train_loss` 0,5404. `eval_loss` : epoch 1 = **0,3949**
 (meilleur, `checkpoint-968`), epoch 2 = 0,4048. 3 870/3 872 train et 298/298
-validation conservés. ZIP SHA256 (sidecar)
+validation conservés. ZIP d'entraînement SHA256 (sidecar)
 `2ee0438c377b1916df419183a531e41f295a46c8be8faf2e7017505104bf75fe` (non
-re-téléchargé localement). **Évaluation 6 tâches lancée** :
-`merouanefaik/qwen3-sft-v3-eval`, `checkpoint-968`. Aucun résultat 3B SFT pour
-l'instant.
+re-téléchargé localement). Évaluation `merouanefaik/qwen3-sft-v3-eval`,
+`checkpoint-968`, sandbox `sandbox_subprocess` : ZIP 97 152 octets, SHA256
+`9f626900b48816744bdcc4298af93c6a4f0b11dc3a2ea6497ce7436c5765bb89`,
+14 checksums internes vérifiés ; durée d'évaluation **4 590 s (76,5 min)**.
+
+| tâche | métrique | 3B SFT v3 | 3B base | 1.5B SFT v3 |
+|---|---|---:|---:|---:|
+| code_generation | pass@1 | 0.6322 (153/242) | **0.7438** (180/242) | 0.5165 |
+| code_refactoring | pass@1 | 0.9667 (58/60) | 0.0000 | **0.9833** (59/60) |
+| unit_test_generation | suites valides | **0.6000** (51/85) | 0.1176 (10/85) | 0.5412 (46/85) |
+| unit_test_generation | mutation kill agrégé | 0.9389 (123/131) | 1.0000 (19/19) | 0.9286 (104/112) |
+| unit_test_generation | valide + tue tous | **0.5529** (47/85) | 0.1176 (10/85) | 0.4824 (41/85) |
+| code_explanation | ROUGE-L | **0.2093** | 0.1065 | 0.2092 |
+| bug_detection | F1 | 0.0000 | **0.5470** | 0.0000 |
+| code_completion | exact_match | 0.3133 (26/83) | 0.3253 | 0.2651 |
+
+Le 3B SFT **ne récupère pas** les deux tâches visées : code_generation reste
+11,2 pts sous le 3B base et bug_detection reste effondrée (100/100
+`has_bug=false`, JSON valide). Il est en revanche **meilleur sur les tests
+unitaires** (51/85 vs 46/85 pour le 1.5B v3 ; 47/85 valides + tuent tous les
+mutants vs 41/85) et fait **jeu égal en explication** (0,2093 vs 0,2092). Le
+refactoring perd 1 exemple face au 1.5B v3 (58/60 vs 59/60). Il est ~1,3–1,7×
+plus lent et utilise ~1,7× plus de VRAM que le 1.5B v3.
 
 ### Rappels
 

@@ -125,4 +125,5 @@ Phi-4 base remains the best for:
 - `code_completion` (0.3494).
 
 The final routing table is in `comparison_qwen_v2.md`: three models. The 3B is
-base-only; a 3B SFT is the best future ablation.
+base-only; a 3B SFT was later run and is documented in
+`qwen3_sft_v3_findings.md`.
