@@ -234,7 +234,7 @@ Trois modèles : Qwen 3B base (2 tâches), Qwen 1.5B SFT (3 tâches), Phi-4 base
 (1 tâche). Simplification possible à 2 modèles : 3B base pour code_generation /
 bug_detection / completion (0.3253 vs 0.3494, −2,4 pts), 1.5B SFT pour le reste.
 
-### SFT v3 — dataset 6 tâches (entraînement en cours)
+### SFT v3 — dataset 6 tâches (entraînement terminé, évaluation en cours)
 
 Le SFT v2 ne couvrait que 3/6 tâches et faisait s'effondrer `bug_detection`.
 Le dataset v3 (`slm-sft-v3`, privé sur Kaggle) couvre les 6 tâches :
@@ -257,9 +257,15 @@ Le dataset v3 (`slm-sft-v3`, privé sur Kaggle) couvre les 6 tâches :
 - Le notebook filtre les exemples > 2 048 tokens avant entraînement pour ne pas
   tronquer silencieusement les complétions (surtout les fonctions C longues).
 
-**Statut :** kernel Kaggle `merouanefaik/qwen15-sft-v3` lancé, résultats non
-disponibles. Ne pas annoncer de gain avant l'évaluation 6 tâches dans le même
-sandbox.
+**Entraînement : TERMINÉ** — kernel `merouanefaik/qwen15-sft-v3`, 2 epochs,
+1 936 steps, `train_runtime` 3 353 s (**55,9 min**), `train_loss` 0,5801.
+`eval_loss` : epoch 1 = **0,4206** (meilleur, `checkpoint-968`), epoch 2 =
+0,4240. ZIP 278 451 244 octets, SHA256
+`873532da1bf5e6f96e48e412dae6e17dae2bd52be4ca77a9fed82f784dc886ff`.
+
+**Statut évaluation :** kernel `merouanefaik/qwen15-sft-v3-eval` lancé avec
+`checkpoint-968` auto-sélectionné. Résultats 6 tâches non disponibles. Ne pas
+annoncer de gain avant l'évaluation dans le même sandbox.
 
 ### Rappels
 
@@ -269,7 +275,8 @@ sandbox.
 - Eval v1 : TERMINÉ (6 tâches, comparaison base vs SFT).
 - Limitation connue : le SFT **v2** couvre 3/6 tâches. Les 3 autres
   (bug_detection, code_explanation, code_refactoring) restent en zero-shot.
-  Le dataset **v3** couvre 6/6, mais ses résultats sont encore en attente.
+  Le dataset **v3** couvre 6/6 ; son évaluation est en cours, aucun résultat
+  n'est encore publiable.
 
 
 ## 8. Optimisations retenues
