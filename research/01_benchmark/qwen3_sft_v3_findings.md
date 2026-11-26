@@ -2,7 +2,9 @@
 
 **Status: training and six-task evaluation complete.** The 3B SFT is a quality
 upgrade for unit-test generation, but it does **not** fix bug_detection and does
-not beat the 3B base on code_generation.
+not beat the 3B base on code_generation. The later Phi-4 SFT v3 run is a
+negative result and does not change this routing; see
+`phi4_sft_v3_findings.md`.
 
 ## Setup
 
@@ -33,7 +35,7 @@ not beat the 3B base on code_generation.
 | unit_test_generation | valid suites | **0.6000** (51/85) | 0.1176 (10/85) | 0.5412 (46/85) |
 | unit_test_generation | mutation kill (aggregate) | 0.9389 (123/131) | 1.0000 (19/19) | 0.9286 (104/112) |
 | unit_test_generation | valid + kills all mutants | **0.5529** (47/85) | 0.1176 (10/85) | 0.4824 (41/85) |
-| code_explanation | ROUGE-L | **0.2093** | 0.1065 | 0.2092 |
+| code_explanation | ROUGE-L | 0.2093 | 0.1065 | 0.2092 |
 | bug_detection | F1 | 0.0000 | **0.5470** | 0.0000 |
 | code_completion | exact_match | 0.3133 (26/83) | 0.3253 | 0.2651 |
 | code_completion | edit_similarity | 0.7229 | 0.6893 | 0.6721 |
@@ -49,8 +51,10 @@ syntax_ok is 1.0 on unit tests.
   and 10/85 for the 3B base; 47/85 suites kill every mutant vs 41/85 for the
   1.5B v3. This is the best unit-test model of the project by a meaningful
   margin (5 problems, +5.9 pts).
-- **Explanation is a tie**: 0.2093 vs 0.2092 for the 1.5B v3. The extra 3B
-  capacity does not help ROUGE-L.
+- **Explanation is a tie with the 1.5B v3**: 0.2093 vs 0.2092. The extra 3B
+  capacity does not help ROUGE-L. Phi-4 SFT v3 later reached 0.2209, but its
+  paired 95% CI over the 100 examples includes zero, so the 1.5B v3 remains the
+  selected explanation model.
 - **Refactoring is slightly lower** than the 1.5B v3 (58/60 vs 59/60, one
   example); both are format wins over the base.
 - **Code generation is better than the 1.5B v3** (0.6322 vs 0.5165) but still
@@ -80,18 +84,18 @@ that fits a T4, but the 1.5B is cheaper for the tasks it wins.
 
 ## Routing
 
-**Best model per task (cost tie-break):**
+**Selected model per task (numeric best unless noted; cost/robustness tie-break):**
 
-| task | best model | metric |
+| task | selected model | metric |
 |---|---|---|
 | code_generation | **Qwen 3B base** | 0.7438 |
 | code_refactoring | **Qwen 1.5B SFT v3** | 0.9833 |
 | unit_test_generation | **Qwen 3B SFT v3** | 0.6000 |
-| code_explanation | **Qwen 1.5B SFT v3** | 0.2092 (3B SFT 0.2093, tie; 1.5B cheaper) |
+| code_explanation | **Qwen 1.5B SFT v3** | 0.2092 (3B SFT 0.2093, tie; Phi-4 v3 0.2209 numeric best but paired CI includes 0) |
 | bug_detection | **Qwen 3B base** | 0.5470 |
 | code_completion | **Phi-4-mini base** | 0.3494 |
 
-**Recommended deployment:** Qwen 3B base for `code_generation` and
+**Recommended quality deployment:** Qwen 3B base for `code_generation` and
 `bug_detection`; Qwen 1.5B SFT v3 for `code_refactoring` and
 `code_explanation`; the Qwen 3B SFT v3 adapter for `unit_test_generation` only;
 Phi-4 base for `code_completion`. The 3B SFT adapter shares the already-loaded
@@ -99,7 +103,7 @@ Phi-4 base for `code_completion`. The 3B SFT adapter shares the already-loaded
 valid + kill-all** over the 1.5B v3, at ~1.7× unit-test latency (10.6 s vs
 6.2 s). This uses 3 base models (3B, 1.5B, Phi-4) plus one adapter.
 
-**3-model simplification (keep current routing):** drop the 3B SFT adapter and
+**Current default (3-model simplification):** drop the 3B SFT adapter and
 let Qwen 1.5B SFT v3 handle unit tests too. Unit tests fall from 0.6000 to
 0.5412 (5 problems), but it is faster, lower-VRAM, and unchanged everywhere
 else. This is the default if deployment simplicity or cost dominates.

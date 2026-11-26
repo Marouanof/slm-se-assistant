@@ -1,0 +1,90 @@
+{
+  "model": "microsoft/Phi-4-mini-instruct",
+  "adapter": "checkpoint-1936",
+  "eval_loss": 0.5213637351989746,
+  "train_runtime_s": 6517.256,
+  "train_loss": 0.7628397655881141,
+  "train_rows_kept": 3871,
+  "train_rows_total": 3872,
+  "val_rows": 298,
+  "train_zip_sha256": "5d601b7df1c08f3871b86d3ca16aa1cc392c52b540f90fae7b8c47818ec49580",
+  "eval_zip_sha256": "d8715eedf23d57cff927b89fa2f41a2f27b5ce4b7bf7bb9be17f8fc0e4f7442e",
+  "eval_run": "phi4mini_sft_v3_full_20261126-100023_a807098d310d_c706867f",
+  "execution_backend": "sandbox_subprocess",
+  "tasks": {
+    "code_generation": {
+      "n": 242,
+      "pass@1": 0.2975206611570248,
+      "passed": 72,
+      "compile_ok": 0.8801652892561983,
+      "executed": 213,
+      "latency_s": 5.306481404958679,
+      "output_tokens": 106.84710743801652,
+      "tokens_per_s": 20.093966942148764,
+      "vram_max_gb": 7.862
+    },
+    "code_refactoring": {
+      "n": 60,
+      "pass@1": 0.6,
+      "passed": 36,
+      "compile_ok": 0.8333333333333334,
+      "executed": 49,
+      "changed": 1.0,
+      "latency_s": 5.003580000000001,
+      "output_tokens": 94.18333333333334,
+      "tokens_per_s": 18.8465,
+      "vram_max_gb": 12.076
+    },
+    "unit_test_generation": {
+      "n": 85,
+      "valid_suite_rate": 0.36470588235294116,
+      "valid_suites": 31,
+      "syntax_ok": 0.8941176470588236,
+      "mutation_kill_aggregate": 0.9504504504504504,
+      "mutants_killed": 211,
+      "mutants_total": 222,
+      "valid_and_kills_all": 25,
+      "latency_s": 6.205212941176469,
+      "output_tokens": 117.24705882352941,
+      "tokens_per_s": 18.937176470588238,
+      "vram_max_gb": 12.076
+    },
+    "code_explanation": {
+      "n": 100,
+      "rouge_l": 0.2209136300763086,
+      "headings_ok": 1.0,
+      "latency_s": 3.5143439999999977,
+      "output_tokens": 66.75,
+      "tokens_per_s": 18.839600000000004,
+      "vram_max_gb": 7.958
+    },
+    "bug_detection": {
+      "n": 100,
+      "tp": 0,
+      "fp": 1,
+      "fn": 50,
+      "tn": 49,
+      "accuracy": 0.49,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "pred_true": 1,
+      "latency_s": 2.0550219999999992,
+      "output_tokens": 28.15,
+      "tokens_per_s": 14.331199999999994,
+      "vram_max_gb": 12.076
+    },
+    "code_completion": {
+      "n": 83,
+      "exact_match": 0.3373493975903614,
+      "edit_similarity": 0.7587108433734939,
+      "exact_matches": 28,
+      "latency_s": 0.6649722891566264,
+      "output_tokens": 11.879518072289157,
+      "tokens_per_s": 16.764457831325306,
+      "vram_max_gb": 12.076
+    }
+  },
+  "eval_zip_bytes": 104728,
+  "eval_runtime_s": 3065.95
+}

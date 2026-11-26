@@ -1,10 +1,11 @@
 # SFT v3 data card — six tasks
 
-Status: **dataset built; Qwen 1.5B and 3B SFT v3 training and six-task
-evaluation complete.** The 1.5B v3 results are in `qwen_v3_findings.md`; the 3B
-SFT results are in `qwen3_sft_v3_findings.md`. The 3B SFT is a targeted
+Status: **dataset built; Qwen 1.5B/3B and Phi-4-mini SFT v3 training and
+six-task evaluation complete.** The 1.5B v3 results are in
+`qwen_v3_findings.md`; the 3B SFT results are in `qwen3_sft_v3_findings.md`;
+the Phi-4 v3 results are in `phi4_sft_v3_findings.md`. The 3B SFT is a targeted
 unit-test upgrade, not a replacement for the 3B base on
-code_generation/bug_detection.
+code_generation/bug_detection. Phi-4 v3 is a negative result: no routing change.
 
 ## Purpose
 
@@ -85,11 +86,12 @@ near-duplicate check would require an embedding pass and is not claimed here.
 
 ## Long examples
 
-The training notebook tokenises every row with the Qwen tokenizer and drops
-rows longer than 2,048 tokens before training. This prevents the assistant
+The training notebooks tokenise every row with the target model's tokenizer and
+drop rows longer than 2,048 tokens before training. This prevents the assistant
 completion from being silently truncated, especially for long C functions.
-The v3 run kept **3 870 / 3 872** train rows (2 dropped) and **298 / 298**
-validation rows.
+Qwen v3 kept **3 870 / 3 872** train rows (2 dropped) and **298 / 298**
+validation rows; Phi-4 v3 kept **3 871 / 3 872** train rows (1 dropped) and
+**298 / 298** validation rows.
 
 ## Regenerate
 
@@ -117,5 +119,7 @@ this public repository.
 - The real-repository code-generation replay set may teach long functions and
   external-style code; it is a diversity measure, not a benchmark-matched
   training set.
-- No v3 result should be reported until the six-task evaluation runs in the
-  same sandbox as the base models.
+- All reported v3 runs use the same prompts, private tests and
+  `sandbox_subprocess` as the base models. The six-task eval is 670 examples;
+  small differences are within sandbox/platform noise, and the Phi-4 v3
+  explanation lead has a paired CI that includes zero.

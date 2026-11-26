@@ -2,8 +2,10 @@
 
 **Status: training and six-task evaluation complete, including the 3B SFT v3
 ablation.** The numbers below come from the Kaggle eval sandbox; the local
-`compare_runs.py` recomputation is recorded in `comparison_qwen_v3.md`. The 3B
-SFT details are in `qwen3_sft_v3_findings.md`.
+`compare_runs.py` recomputation is recorded in
+`comparison_sft_v3_all_models.md`. The 3B SFT details are in
+`qwen3_sft_v3_findings.md`; the later Phi-4 v3 run is in
+`phi4_sft_v3_findings.md`.
 
 ## Setup
 
@@ -55,7 +57,9 @@ the unit-test suites ran through the pytest shim.
 - **v3 is a net gain over v2**: it improves refactoring, unit tests, explanation
   and completion. It is the best model at 1.5B on `code_refactoring` (0.9833),
   `unit_test_generation` (0.5412) and `code_explanation` (0.2092); the 3B SFT
-  later edges unit tests to 0.6000 and ties explanation at 0.2093.
+  later edges unit tests to 0.6000 and ties explanation at 0.2093. Phi-4 SFT v3
+  later reached 0.2209 on explanation, but its paired 95% CI includes zero, so
+  the 1.5B v3 remains selected.
 - **code_generation** is slightly below v2 and still far below Qwen 3B base
   (0.7438 locally); the six-task data did not fix the SFT code-generation
   regression.
@@ -66,10 +70,10 @@ the unit-test suites ran through the pytest shim.
   0.5470.
 - **code_completion** improves over v2 but stays below Phi-4 base (0.3494).
 
-The 1.5B v3 gains are real but task-specific. The current three-model routing
-replaces SFT v2 with SFT v3 on the three tasks it wins; code_generation and
-bug_detection stay on Qwen 3B base, completion stays on Phi-4 base. The 3B SFT
-adds an optional unit-test upgrade (see below).
+The 1.5B v3 gains are real but task-specific. The current default keeps Qwen 3B
+base for code_generation and bug_detection, uses Qwen 1.5B SFT v3 for
+refactoring, explanation and unit tests, and keeps Phi-4 base for completion.
+The Qwen 3B SFT adapter is an optional unit-test upgrade (see below).
 
 ## 3B SFT v3 ablation
 

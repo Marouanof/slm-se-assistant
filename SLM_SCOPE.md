@@ -90,8 +90,8 @@ Exclus de ce document (gérés par l'ami) :
 
 ## 6. Prochaine étape logique (next step)
 
-Le baseline, le SFT v2/v3 (1.5B et 3B) et l'évaluation six tâches sont faits.
-Reste, dans l'ordre du CDC et compatible avec la contrainte Kaggle-only :
+Le baseline, le SFT v2/v3 (Phi-4, 1.5B et 3B) et l'évaluation six tâches sont
+faits. Reste, dans l'ordre du CDC et compatible avec la contrainte Kaggle-only :
 
 1. **Quantization** INT8/INT4 sur Kaggle, export des poids quantifiés et GGUF,
    puis ablation FP16 vs quantifié (métriques + latence/mémoire).
@@ -223,26 +223,28 @@ SFT sort une fonction propre (60/60 compilent, 55/60 passent).
   bug_detection, mais devient le meilleur modèle sur les tests unitaires
   (0,6000) ; voir la section SFT v3 ci-dessous.
 
-**Routing final (meilleur modèle par tâche, tous modèles confondus ; égalités
-tranchées par le coût) :**
+**Routing final (modèle sélectionné par tâche, tous modèles confondus ;
+égalités et gains non robustes tranchés par le coût) :**
 
-| tâche | meilleur modèle | métrique |
+| tâche | modèle sélectionné | métrique |
 |---|---|---|
 | code_generation | **Qwen 3B base** | **0.7438** (local ; 0.7397 Kaggle) |
 | code_refactoring | **Qwen 1.5B SFT v3** | **0.9833** |
 | unit_test_generation | **Qwen 3B SFT v3** | **0.6000** |
-| code_explanation | **Qwen 1.5B SFT v3** | **0.2092** (3B SFT 0.2093, égalité) |
+| code_explanation | **Qwen 1.5B SFT v3** | **0.2092** (3B SFT 0.2093, égalité ; Phi-4 v3 0.2209 meilleur brut mais IC95 % inclut 0) |
 | bug_detection | **Qwen 3B base** | **0.5470** |
 | code_completion | **Phi-4-mini base** | **0.3494** |
 
-**Déploiement recommandé** : Qwen 3B base (code_generation, bug_detection),
+**Déploiement qualité recommandé** : Qwen 3B base (code_generation, bug_detection),
 Qwen 1.5B SFT v3 (refactoring, explication), **adapter Qwen 3B SFT v3 pour
 unit_test_generation uniquement**, Phi-4 base (completion). L'adapter 3B SFT
 partage les poids du 3B base déjà chargé ; il apporte **+5/85 suites valides**
 et **+6/85 valides + tuent tous les mutants** par rapport au 1.5B v3, au prix
-d'une latence ~1,7× sur cette tâche (10,6 s vs 6,2 s).
+d'une latence ~1,7× sur cette tâche (10,6 s vs 6,2 s). **Phi-4 SFT v3 n'est pas
+déployé** : son gain d'explication n'est pas robuste et il consomme ~8 Go de
+VRAM contre ~3,3 Go pour le 1.5B v3 sur cette tâche.
 
-**Simplification 3 modèles (routing actuel)** : retirer l'adapter 3B SFT et
+**Routing actuel par défaut (simplification 3 modèles)** : retirer l'adapter 3B SFT et
 laisser le 1.5B v3 faire les tests unitaires. On perd 5 problèmes (0,6000 →
 0,5412) mais on garde le modèle le plus rapide et le moins gourmand en VRAM.
 C'est le choix par défaut si la simplicité/le coût priment.
@@ -335,6 +337,38 @@ refactoring perd 1 exemple face au 1.5B v3 (58/60 vs 59/60). Il est jusqu'à
 (explication et completion sont proches) et utilise ~1,7× plus de VRAM que le
 1.5B v3.
 
+**SFT Phi-4-mini v3 — entraînement + évaluation : TERMINÉS** — kernel
+`merouanefaik/phi4-sft-v3`, 2 epochs, 1 936 steps, `train_runtime` 6 517 s
+(**108,6 min**), `train_loss` 0,7628. `eval_loss` : epoch 1 = 0,5363
+(`checkpoint-968`), epoch 2 = **0,5214** (`checkpoint-1936`, retenu). 3 871/3 872
+train (1 rejeté) et 298/298 validation conservés. ZIP d'entraînement SHA256
+(sidecar) `5d601b7df1c08f3871b86d3ca16aa1cc392c52b540f90fae7b8c47818ec49580`
+(non re-téléchargé localement). Évaluation `merouanefaik/phi4-sft-v3-eval`,
+`checkpoint-1936`, sandbox `sandbox_subprocess` : ZIP 104 728 octets, SHA256
+`d8715eedf23d57cff927b89fa2f41a2f27b5ce4b7bf7bb9be17f8fc0e4f7442e`,
+14 checksums internes vérifiés ; durée d'évaluation **3 066 s (51,1 min)**.
+
+| tâche | métrique | Phi-4 v3 | Phi-4 v2 | Phi-4 base |
+|---|---|---:|---:|---:|
+| code_generation | pass@1 | 0,2975 (72/242) | 0,2851 (69/242) | **0,6736** (163/242) |
+| code_refactoring | pass@1 | 0,6000 (36/60) | 0,4000 (24/60) | **0,6667** (40/60) |
+| unit_test_generation | suites valides | 0,3647 (31/85) | **0,3882** (33/85) | 0,1059 (9/85) |
+| unit_test_generation | mutation kill agrégé | 0,9505 (211/222) | 0,9444 | **1,0000** (23/23) |
+| unit_test_generation | valide + tue tous | 0,2941 (25/85) | **0,3412** (29/85) | 0,1059 (9/85) |
+| code_explanation | ROUGE-L | **0,2209** | 0,1272 | 0,1531 |
+| bug_detection | F1 | 0,0000 | 0,0000 | **0,4691** |
+| code_completion | exact_match | 0,3373 (28/83) | 0,3373 (28/83) | **0,3494** (29/83) |
+| code_completion | edit_similarity | 0,7587 | — | 0,7500 |
+
+Le Phi-4 v3 **ne récupère pas** code_generation (0,2975, soit 37,6 pts sous la
+base) ni bug_detection (F1 0,0 ; 0 TP / 1 FP / 50 FN / 49 TN). Les tests
+unitaires baissent même sous Phi-4 v2 (31/85 vs 33/85), malgré un taux de
+mutation conditionnel élevé (211/222). La completion est à 28/83, un exemple
+sous la base. Seule l'explication est numériquement devant (0,2209), mais le
+bootstrap apparié sur les 100 exemples donne +0,0117 avec un IC95 %
+`[-0,0029 ; +0,0263]` : le gain n'est pas robuste et coûte ~8 Go de VRAM contre
+~3,3 Go pour le 1.5B v3. **Aucun changement de routage.**
+
 ### Rappels
 
 - Smoke test v1 : TERMINÉ (val loss 0.8345).
@@ -342,9 +376,10 @@ refactoring perd 1 exemple face au 1.5B v3 (58/60 vs 59/60). Il est jusqu'à
   meilleur = checkpoint-203, adapter 34 MB, SHA256 zip vérifié).
 - Eval v1 : TERMINÉ (6 tâches, comparaison base vs SFT).
 - Limitation connue : le SFT **v2** ne couvrait que 3/6 tâches. Le dataset
-  **v3** couvre 6/6 et est évalué. Il améliore refactoring, tests unitaires,
-  explication et completion, mais `bug_detection` reste à F1 0.0 (classe
-  négative uniquement) et code_generation reste sous le 3B base.
+  **v3** couvre 6/6 et est évalué sur Phi-4, 1.5B et 3B. Les gains Qwen v3
+  restent task-specific ; `bug_detection` reste à F1 0.0 et code_generation
+  reste sous le 3B base. Le Phi-4 v3 n'apporte qu'un gain d'explication non
+  robuste et ne change pas le routage.
 
 
 ## 8. Optimisations retenues

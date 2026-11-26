@@ -257,7 +257,7 @@ The v3 ZIP SHA256 is
 `269615a681c0674e8200aa0fb5fa4c0afe0fbb799eb81d9b8ae1f7e4ba10f4a6`
 (100 159 bytes); the 14 internal checksums verified. The local
 `compare_runs.py` recomputation matches the v3 numbers exactly
-(`comparison_qwen_v3.md`). It reports 0.6074 / 0.7438 for the 1.5B / 3B base
+(`comparison_sft_v3_all_models.md`). It reports 0.6074 / 0.7438 for the 1.5B / 3B base
 code_generation, 1–2 examples above the earlier values; the ranking and routing
 are unchanged. `bug_detection` is still 100/100 `has_bug=false` with valid JSON,
 so the 1.5B model did not learn the C defect signal. Qwen 3B base remains the
@@ -298,31 +298,82 @@ internal checksums verified.
   code_generation/refactoring/unit tests (explanation and completion are
   similar), and ~8.5 GB VRAM vs ~4.8 GB.
 
+## Phi-4-mini SFT v3 (six tasks)
+
+Same v3 dataset, prompts, private tests and sandbox as the Qwen v3 runs.
+Training: 2 epochs, 1 936 steps, **108.6 min**, `train_loss` 0.7628; eval
+**51.1 min**; best `checkpoint-1936` with **eval_loss 0.5214** (epoch 1 =
+0.5363 at checkpoint-968, epoch 2 = 0.5214). Kept **3 871 / 3 872** train rows
+(1 dropped) and **298 / 298** validation rows. Eval ZIP 104 728 bytes, SHA256
+`d8715eedf23d57cff927b89fa2f41a2f27b5ce4b7bf7bb9be17f8fc0e4f7442e`; all 14
+internal checksums verified. Run:
+`phi4mini_sft_v3_full_20261126-100023_a807098d310d_c706867f`.
+
+| task | metric | Phi-4 v3 | Phi-4 v2 | Phi-4 base |
+|---|---|---:|---:|---:|
+| code_generation | pass@1 | 0.2975 (72/242) | 0.2851 (69/242) | **0.6736** (163/242) |
+| code_generation | compile_ok | 0.8802 | — | 1.0000 |
+| code_refactoring | pass@1 | 0.6000 (36/60) | 0.4000 (24/60) | **0.6667** (40/60) |
+| code_refactoring | compile_ok | 0.8333 | — | 0.9667 |
+| unit_test_generation | valid suites | 0.3647 (31/85) | **0.3882** (33/85) | 0.1059 (9/85) |
+| unit_test_generation | mutation kill (aggregate) | 0.9505 (211/222) | 0.9444 | **1.0000** (23/23) |
+| unit_test_generation | valid + kills all mutants | 0.2941 (25/85) | **0.3412** (29/85) | 0.1059 (9/85) |
+| code_explanation | ROUGE-L | **0.2209** | 0.1272 | 0.1531 |
+| bug_detection | F1 | 0.0000 | 0.0000 | **0.4691** |
+| code_completion | exact_match | 0.3373 (28/83) | 0.3373 (28/83) | **0.3494** (29/83) |
+| code_completion | edit_similarity | 0.7587 | — | 0.7500 |
+
+- **code_generation**: 213/242 compiled and executed, 29 syntax errors; no fix.
+  The pass rate is 37.6 pts below Phi-4 base.
+- **code_refactoring**: 50/60 compiled, 49/60 executed (10 syntax errors, 1
+  `forbidden_call:compile`), 36/60 passed. It improves over v2 by 12 examples
+  but remains below Phi-4 base.
+- **unit tests**: 76/85 syntax-valid, 31/85 valid suites, 25/85 valid + kill-all.
+  The conditional mutation rate (211/222) is high, but valid coverage is below
+  Phi-4 v2 and far below Qwen 3B SFT v3.
+- **explanation**: 0.2209 is the highest ROUGE-L in the project, but a paired
+  bootstrap over the 100 common examples gives only +0.0117 over Qwen 1.5B SFT
+  v3, 95% CI `[-0.0029, +0.0263]`. The interval includes zero; this is not a
+  robust win, and it uses ~8.0 GB vs ~3.3 GB for the 1.5B on this task.
+- **bug_detection**: 0 TP / 1 FP / 50 FN / 49 TN, F1 0.0. The model predicts
+  true once instead of always false, but still does not learn the C-defect
+  signal.
+- **completion**: 28/83 exact, edit similarity 0.7587; ties v2 on exact match
+  and is one example below Phi-4 base.
+- **Cost**: up to 12.1 GB VRAM on long prompts (8.0 GB on explanation); eval
+  51.1 min. It fits a T4 but is the heaviest adapter.
+
 ## Final routing
 
-Best model per task across Phi-4 base, Phi-4 SFT v2, Qwen 1.5B SFT v2/v3,
-Qwen 3B base and Qwen 3B SFT v3 (ties broken by cost):
+Selected model per task across Phi-4 base, Phi-4 SFT v2/v3, Qwen 1.5B SFT
+v2/v3, Qwen 3B base and Qwen 3B SFT v3 (numeric best unless noted; cost and
+robustness break ties):
 
-| task | best model | metric | runner-up |
+| task | selected model | metric | runner-up |
 |---|---|---|---|
 | code_generation | **Qwen 3B base** | **0.7438** | Phi-4 base 0.6736 |
 | code_refactoring | **Qwen 1.5B SFT v3** | **0.9833** | Qwen 3B SFT v3 0.9667 |
 | unit_test_generation | **Qwen 3B SFT v3** | **0.6000** | Qwen 1.5B SFT v3 0.5412 |
-| code_explanation | **Qwen 1.5B SFT v3** | **0.2092** (tie with 3B SFT 0.2093; 1.5B cheaper) | Qwen 1.5B SFT v2 0.1755 |
+| code_explanation | **Qwen 1.5B SFT v3** | **0.2092** | Phi-4 SFT v3 0.2209 numeric best, but paired CI includes 0; 3B SFT 0.2093 ties 1.5B |
 | bug_detection | **Qwen 3B base** | **0.5470** | Phi-4 base 0.4691 |
 | code_completion | **Phi-4-mini base** | **0.3494** | Qwen 3B base 0.3253 |
 
-**Recommended deployment:** Qwen 3B base for `code_generation` and
+Phi-4 SFT v3 is the numeric explanation leader, but the +0.0117 paired gain
+over Qwen 1.5B SFT v3 has a 95% CI of `[-0.0029, +0.0263]`; the interval
+includes zero. It also uses ~8.0 GB vs ~3.3 GB on that task, so it is not
+selected.
+
+**Recommended quality deployment:** Qwen 3B base for `code_generation` and
 `bug_detection`; Qwen 1.5B SFT v3 for `code_refactoring` and
 `code_explanation`; the Qwen 3B SFT v3 adapter for `unit_test_generation` only;
 Phi-4 base for `code_completion`. The 3B SFT adapter shares the already-loaded
 3B base, so it adds no base weights. It buys 5/85 valid suites and 6/85
-valid+kill-all over the 1.5B v3, at ~1.7× unit-test latency.
+valid+kill-all over the 1.5B v3, at ~1.7× unit-test latency. Phi-4 SFT v3 is not
+deployed.
 
-**3-model simplification (current routing):** drop the 3B SFT adapter and let
+**Current default (3-model simplification):** drop the 3B SFT adapter and let
 the 1.5B v3 handle unit tests too. Unit tests fall from 0.6000 to 0.5412 (5
-problems), but this is faster, lower-VRAM and unchanged elsewhere. This is the
-default when simplicity or cost dominates.
+problems), but this is faster, lower-VRAM and unchanged elsewhere.
 
 **Alternative with two base weights:** Qwen 3B base for code_generation,
 bug_detection and completion (0.3253 vs 0.3494, −2.4 pts), with the 3B SFT
@@ -332,4 +383,6 @@ explanation.
 
 The 3B SFT did **not** recover code_generation or bug_detection, so the 3B base
 remains the model for those two tasks. The 3B SFT is a targeted unit-test
-upgrade, not a replacement for the 3B base.
+upgrade, not a replacement for the 3B base. Phi-4 SFT v3 is also a negative
+result: no code_generation/bug fix, unit tests below Phi-4 v2, and only a
+non-robust explanation lead.
